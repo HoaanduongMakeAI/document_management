@@ -1,0 +1,151 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:IN-{sender_abbr}-{YYYY}-{#####}",
+ "creation": "2025-04-21 13:12:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "document_details_section",
+  "base_document",
+  "sender",
+  "sender_abbr",
+  "date_received",
+  "incoming_number",
+  "processing_details_section",
+  "status",
+  "assigned_to",
+  "due_date",
+  "instructions",
+  "storage_section",
+  "store_locally",
+  "versions_section",
+  "versions"
+ ],
+ "fields": [
+  {
+   "fieldname": "document_details_section",
+   "fieldtype": "Section Break",
+   "label": "Document Details"
+  },
+  {
+   "fieldname": "base_document",
+   "fieldtype": "Link",
+   "label": "Base Document",
+   "options": "Document",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sender",
+   "fieldtype": "Data",
+   "label": "Sender / Nơi gửi",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sender_abbr",
+   "fieldtype": "Data",
+   "label": "Sender Abbreviation",
+   "hidden": 1
+  },
+  {
+   "fieldname": "date_received",
+   "fieldtype": "Date",
+   "label": "Date Received / Ngày đến",
+   "reqd": 1
+  },
+  {
+   "fieldname": "incoming_number",
+   "fieldtype": "Data",
+   "label": "Incoming Number / Số đến"
+  },
+  {
+   "fieldname": "processing_details_section",
+   "fieldtype": "Section Break",
+   "label": "Processing Details"
+  },
+  {
+   "default": "Open",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Open\nPending Review\nProcessing\nClosed\nArchived",
+   "reqd": 1
+  },
+  {
+   "fieldname": "assigned_to",
+   "fieldtype": "Link",
+   "label": "Assigned To",
+   "options": "User"
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "label": "Due Date"
+  },
+  {
+   "fieldname": "instructions",
+   "fieldtype": "Text",
+   "label": "Instructions / Ý kiến chỉ đạo"
+  },
+  {
+   "fieldname": "storage_section",
+   "fieldtype": "Section Break",
+   "label": "Storage Options"
+  },
+  {
+   "default": "0",
+   "fieldname": "store_locally",
+   "fieldtype": "Check",
+   "label": "Store File Locally (ERPNext)"
+  },
+  {
+   "fieldname": "versions_section",
+   "fieldtype": "Section Break",
+   "label": "Document Versions"
+  },
+  {
+   "fieldname": "versions",
+   "fieldtype": "Table",
+   "label": "Versions",
+   "options": "Document Version",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-04-21 13:12:00.000000",
+ "modified_by": "Administrator",
+ "module": "Document Management",
+ "name": "Incoming Document",
+ "naming_rule": "Set by user",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Document Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

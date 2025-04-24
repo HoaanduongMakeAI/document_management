@@ -1,0 +1,106 @@
+{
+ "creation": "2025-04-21 15:10:00.000000",
+ "doc_status": "0",
+ "doctype": "Workflow",
+ "document_type": "Incoming Document",
+ "is_active": 1,
+ "modified": "2025-04-21 15:10:00.000000",
+ "modified_by": "Administrator",
+ "module": "Document Management",
+ "name": "Incoming Document Processing",
+ "owner": "Administrator",
+ "states": [
+  {
+   "allow_edit": "Document Manager,System Manager",
+   "doc_status": "0",
+   "is_optional_state": 0,
+   "name": "Open",
+   "state": "Open",
+   "update_field": "status"
+  },
+  {
+   "allow_edit": "Document Manager,System Manager",
+   "doc_status": "0",
+   "is_optional_state": 0,
+   "name": "Pending Review",
+   "state": "Pending Review",
+   "update_field": "status"
+  },
+  {
+   "allow_edit": "Document Manager,System Manager",
+   "doc_status": "0",
+   "is_optional_state": 0,
+   "name": "Processing",
+   "state": "Processing",
+   "update_field": "status"
+  },
+  {
+   "allow_edit": "System Manager",
+   "doc_status": "1",
+   "is_optional_state": 0,
+   "name": "Closed",
+   "state": "Closed",
+   "update_field": "status"
+  },
+  {
+   "allow_edit": "System Manager",
+   "doc_status": "2",
+   "is_optional_state": 0,
+   "name": "Archived",
+   "state": "Archived",
+   "update_field": "status"
+  }
+ ],
+ "transitions": [
+  {
+   "action": "Submit for Review",
+   "allowed": "Document Manager,System Manager",
+   "allow_self_approval": 0,
+   "next_state": "Pending Review",
+   "state": "Open"
+  },
+  {
+   "action": "Assign for Processing",
+   "allowed": "Document Manager,System Manager",
+   "allow_self_approval": 0,
+   "next_state": "Processing",
+   "state": "Pending Review"
+  },
+  {
+   "action": "Complete Processing",
+   "allowed": "Document Manager,System Manager",
+   "allow_self_approval": 0,
+   "next_state": "Closed",
+   "state": "Processing"
+  },
+  {
+   "action": "Archive",
+   "allowed": "System Manager",
+   "allow_self_approval": 1,
+   "next_state": "Archived",
+   "state": "Open"
+  },
+   {
+   "action": "Archive",
+   "allowed": "System Manager",
+   "allow_self_approval": 1,
+   "next_state": "Archived",
+   "state": "Pending Review"
+  },
+   {
+   "action": "Archive",
+   "allowed": "System Manager",
+   "allow_self_approval": 1,
+   "next_state": "Archived",
+   "state": "Processing"
+  },
+   {
+   "action": "Archive",
+   "allowed": "System Manager",
+   "allow_self_approval": 1,
+   "next_state": "Archived",
+   "state": "Closed"
+  }
+ ],
+ "workflow_name": "Incoming Document Processing"
+}

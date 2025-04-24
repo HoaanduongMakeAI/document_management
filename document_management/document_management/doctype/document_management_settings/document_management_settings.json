@@ -1,0 +1,88 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2025-04-21 14:10:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "sharepoint_integration_section",
+  "connected_app",
+  "entra_group_id",
+  "fetch_sharepoint_ids_button",
+  "sharepoint_site_id",
+  "sharepoint_drive_id",
+  "base_folder_path"
+ ],
+ "fields": [
+  {
+   "fieldname": "sharepoint_integration_section",
+   "fieldtype": "Section Break",
+   "label": "SharePoint Integration"
+  },
+  {
+   "fieldname": "connected_app",
+   "fieldtype": "Link",
+   "label": "Microsoft Graph Connected App",
+   "options": "Connected App",
+   "reqd": 1,
+   "description": "Select the Connected App configured for Microsoft Graph API access."
+  },
+  {
+   "fieldname": "entra_group_id",
+   "fieldtype": "Data",
+   "label": "Microsoft Entra (Azure AD) Group ID",
+   "description": "Enter the Object ID of the Microsoft 365 Group whose SharePoint site you want to use."
+  },
+  {
+   "fieldname": "fetch_sharepoint_ids_button",
+   "fieldtype": "Button",
+   "label": "Fetch SharePoint Site/Drive IDs from Group ID",
+   "options": "fetch_sharepoint_ids_from_group",
+   "depends_on": "eval:doc.connected_app && doc.entra_group_id"
+  },
+  {
+   "fieldname": "sharepoint_site_id",
+   "fieldtype": "Data",
+   "label": "SharePoint Site ID",
+   "description": "The ID of the target SharePoint Site (obtainable via Graph API/Explorer)."
+  },
+  {
+   "fieldname": "sharepoint_drive_id",
+   "fieldtype": "Data",
+   "label": "SharePoint Drive (Library) ID",
+   "reqd": 1,
+   "description": "The ID of the target Document Library (Drive) within the SharePoint Site."
+  },
+  {
+   "fieldname": "base_folder_path",
+   "fieldtype": "Data",
+   "label": "Base Folder Path",
+   "default": "General Management/Công văn",
+   "description": "The base path within the Drive where documents will be stored (e.g., 'Shared Documents/Folder')."
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-04-21 14:10:00.000000",
+ "modified_by": "Administrator",
+ "module": "Document Management",
+ "name": "Document Management Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
