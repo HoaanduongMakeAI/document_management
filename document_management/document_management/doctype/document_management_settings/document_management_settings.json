@@ -1,7 +1,6 @@
 {
  "actions": [],
- "allow_rename": 0,
- "creation": "2025-04-21 14:10:00.000000",
+ "creation": "2025-04-21 14:10:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -20,50 +19,50 @@
    "label": "SharePoint Integration"
   },
   {
+   "description": "Select the Connected App configured for Microsoft Graph API access.",
    "fieldname": "connected_app",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Microsoft Graph Connected App",
    "options": "Connected App",
-   "reqd": 1,
-   "description": "Select the Connected App configured for Microsoft Graph API access."
+   "reqd": 1
   },
   {
+   "description": "Enter the Object ID of the Microsoft 365 Group whose SharePoint site you want to use.",
    "fieldname": "entra_group_id",
    "fieldtype": "Data",
-   "label": "Microsoft Entra (Azure AD) Group ID",
-   "description": "Enter the Object ID of the Microsoft 365 Group whose SharePoint site you want to use."
+   "label": "Microsoft Entra (Azure AD) Group ID"
   },
   {
+   "depends_on": "eval:doc.connected_app && doc.entra_group_id",
    "fieldname": "fetch_sharepoint_ids_button",
    "fieldtype": "Button",
    "label": "Fetch SharePoint Site/Drive IDs from Group ID",
-   "options": "fetch_sharepoint_ids_from_group",
-   "depends_on": "eval:doc.connected_app && doc.entra_group_id"
+   "options": "fetch_sharepoint_ids_from_group"
   },
   {
+   "description": "The ID of the target SharePoint Site (obtainable via Graph API/Explorer).",
    "fieldname": "sharepoint_site_id",
    "fieldtype": "Data",
-   "label": "SharePoint Site ID",
-   "description": "The ID of the target SharePoint Site (obtainable via Graph API/Explorer)."
+   "label": "SharePoint Site ID"
   },
   {
+   "description": "The ID of the target Document Library (Drive) within the SharePoint Site.",
    "fieldname": "sharepoint_drive_id",
    "fieldtype": "Data",
-   "label": "SharePoint Drive (Library) ID",
-   "reqd": 1,
-   "description": "The ID of the target Document Library (Drive) within the SharePoint Site."
+   "label": "SharePoint Drive (Library) ID"
   },
   {
+   "default": "General Management/C\u00f4ng v\u0103n",
+   "description": "The base path within the Drive where documents will be stored (e.g., 'Shared Documents/Folder').",
    "fieldname": "base_folder_path",
    "fieldtype": "Data",
-   "label": "Base Folder Path",
-   "default": "General Management/Công văn",
-   "description": "The base path within the Drive where documents will be stored (e.g., 'Shared Documents/Folder')."
+   "label": "Base Folder Path"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2025-04-21 14:10:00.000000",
+ "modified": "2025-04-28 11:05:49.009031",
  "modified_by": "Administrator",
  "module": "Document Management",
  "name": "Document Management Settings",
@@ -73,10 +72,8 @@
    "create": 1,
    "delete": 1,
    "email": 1,
-   "export": 1,
    "print": 1,
    "read": 1,
-   "report": 1,
    "role": "System Manager",
    "share": 1,
    "write": 1
@@ -84,5 +81,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

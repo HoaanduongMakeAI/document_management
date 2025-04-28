@@ -6,7 +6,7 @@ from frappe.model.document import Document
 from frappe.utils import strip_html, get_abbr
 
 # Import the upload function - Adjust path due to directory move
-from ..utils.sharepoint_integration import upload_file_to_sharepoint
+from document_management.document_management.utils.sharepoint_integration import upload_file_to_sharepoint
 
 class IncomingDocument(Document):
     def autoname(self):

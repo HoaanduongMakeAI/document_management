@@ -10,13 +10,16 @@ from document_management.document_management.utils import get_settings # Updated
 
 def get_sharepoint_settings():
     """Wrapper to get and validate SharePoint settings."""
-    settings = get_settings() # Fetches the singleton DocType instance
+    # settings = get_settings() # Fetches the singleton DocType instance
+    settings = frappe.get_cached_doc("Document Management Settings")
     if not settings:
          frappe.throw("Document Management Settings not found. Please configure them first.")
     if not settings.connected_app:
         frappe.throw("Microsoft Graph Connected App not set in Document Management Settings.")
-    if not settings.sharepoint_drive_id:
-        frappe.throw("SharePoint Drive ID not set in Document Management Settings.")
+    if not settings.entra_group_id:
+        frappe.throw("Microsoft Entra Group ID not set in Document Management Settings.")
+    # if not settings.sharepoint_drive_id:
+    #     frappe.throw("SharePoint Drive ID not set in Document Management Settings.")
     return settings
 
 def get_access_token():
