@@ -1,24 +1,23 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:IN-{sender_abbr}-{YYYY}-{#####}",
+ "autoname": "format:IN-{YYYY}-{MM}-{#####}",
  "creation": "2025-04-21 13:12:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "document_details_section",
-  "base_document",
+  "subject",
+  "document_type",
   "sender",
-  "sender_abbr",
   "date_received",
   "incoming_number",
+  "teams_link",
   "processing_details_section",
   "status",
   "assigned_to",
   "due_date",
   "instructions",
-  "storage_section",
-  "store_locally",
   "versions_section",
   "versions"
  ],
@@ -29,10 +28,16 @@
    "label": "Document Details"
   },
   {
-   "fieldname": "base_document",
+   "fieldname": "subject",
+   "fieldtype": "Small Text",
+   "label": "Subject / Trích yếu",
+   "reqd": 1
+  },
+  {
+   "fieldname": "document_type",
    "fieldtype": "Link",
-   "label": "Base Document",
-   "options": "Document",
+   "label": "Document Type / Phân loại",
+   "options": "Document Type",
    "reqd": 1
   },
   {
@@ -40,12 +45,6 @@
    "fieldtype": "Data",
    "label": "Sender / Nơi gửi",
    "reqd": 1
-  },
-  {
-   "fieldname": "sender_abbr",
-   "fieldtype": "Data",
-   "label": "Sender Abbreviation",
-   "hidden": 1
   },
   {
    "fieldname": "date_received",
@@ -56,31 +55,38 @@
   {
    "fieldname": "incoming_number",
    "fieldtype": "Data",
-   "label": "Incoming Number / Số đến"
+   "label": "Incoming Number / Số đến (Manual)"
+  },
+  {
+   "fieldname": "teams_link",
+   "fieldtype": "Data",
+   "label": "MS Teams Link",
+   "options": "URL",
+   "reqd": 1
   },
   {
    "fieldname": "processing_details_section",
    "fieldtype": "Section Break",
-   "label": "Processing Details"
+   "label": "Processing Details / Chi tiết Xử lý"
   },
   {
-   "default": "Open",
+   "default": "Chờ xử lý",
    "fieldname": "status",
    "fieldtype": "Select",
-   "label": "Status",
-   "options": "Open\nPending Review\nProcessing\nClosed\nArchived",
+   "label": "Status / Trạng thái",
+   "options": "Chờ xử lý\nĐang xử lý\nĐã xử lý\nLưu trữ",
    "reqd": 1
   },
   {
    "fieldname": "assigned_to",
    "fieldtype": "Link",
-   "label": "Assigned To",
+   "label": "Assigned To / Người xử lý",
    "options": "User"
   },
   {
    "fieldname": "due_date",
    "fieldtype": "Date",
-   "label": "Due Date"
+   "label": "Due Date / Hạn xử lý"
   },
   {
    "fieldname": "instructions",
@@ -88,27 +94,15 @@
    "label": "Instructions / Ý kiến chỉ đạo"
   },
   {
-   "fieldname": "storage_section",
-   "fieldtype": "Section Break",
-   "label": "Storage Options"
-  },
-  {
-   "default": "0",
-   "fieldname": "store_locally",
-   "fieldtype": "Check",
-   "label": "Store File Locally (ERPNext)"
-  },
-  {
    "fieldname": "versions_section",
    "fieldtype": "Section Break",
-   "label": "Document Versions"
+   "label": "Document Versions / Phiên bản"
   },
   {
    "fieldname": "versions",
    "fieldtype": "Table",
    "label": "Versions",
-   "options": "Document Version",
-   "reqd": 1
+   "options": "Document Version"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -117,7 +111,8 @@
  "modified_by": "Administrator",
  "module": "Document Management",
  "name": "Incoming Document",
- "naming_rule": "Set by user",
+ "naming_rule": "By \"Naming Series\" field",
+ "naming_series": "IN-.YYYY.-.MM.-",
  "owner": "Administrator",
  "permissions": [
   {
