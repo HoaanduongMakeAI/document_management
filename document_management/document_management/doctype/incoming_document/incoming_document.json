@@ -30,32 +30,32 @@
   {
    "fieldname": "subject",
    "fieldtype": "Small Text",
-   "label": "Subject / Trích yếu",
+   "label": "Subject",
    "reqd": 1
   },
   {
    "fieldname": "document_type",
    "fieldtype": "Link",
-   "label": "Document Type / Phân loại",
+   "label": "Document Type",
    "options": "Document Type",
    "reqd": 1
   },
   {
    "fieldname": "sender",
    "fieldtype": "Data",
-   "label": "Sender / Nơi gửi",
+   "label": "Sender",
    "reqd": 1
   },
   {
    "fieldname": "date_received",
    "fieldtype": "Date",
-   "label": "Date Received / Ngày đến",
+   "label": "Date Received",
    "reqd": 1
   },
   {
    "fieldname": "incoming_number",
    "fieldtype": "Data",
-   "label": "Incoming Number / Số đến (Manual)"
+   "label": "Incoming Number (Manual)"
   },
   {
    "fieldname": "teams_link",
@@ -67,36 +67,36 @@
   {
    "fieldname": "processing_details_section",
    "fieldtype": "Section Break",
-   "label": "Processing Details / Chi tiết Xử lý"
+   "label": "Processing Details"
   },
   {
-   "default": "Chờ xử lý",
+   "default": "Pending",
    "fieldname": "status",
    "fieldtype": "Select",
-   "label": "Status / Trạng thái",
-   "options": "Chờ xử lý\nĐang xử lý\nĐã xử lý\nLưu trữ",
+   "label": "Status",
+   "options": "Pending\nProcessing\nProcessed\nArchived",
    "reqd": 1
   },
   {
    "fieldname": "assigned_to",
    "fieldtype": "Link",
-   "label": "Assigned To / Người xử lý",
+   "label": "Assigned To",
    "options": "User"
   },
   {
    "fieldname": "due_date",
    "fieldtype": "Date",
-   "label": "Due Date / Hạn xử lý"
+   "label": "Due Date"
   },
   {
    "fieldname": "instructions",
    "fieldtype": "Text",
-   "label": "Instructions / Ý kiến chỉ đạo"
+   "label": "Instructions"
   },
   {
    "fieldname": "versions_section",
    "fieldtype": "Section Break",
-   "label": "Document Versions / Phiên bản"
+   "label": "Document Versions"
   },
   {
    "fieldname": "versions",
