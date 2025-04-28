@@ -13,6 +13,7 @@
   "recipient",
   "date_issued",
   "outgoing_number",
+  "document_attachment",
   "teams_link",
   "approval_details_section",
   "approval_status",
@@ -64,11 +65,16 @@
    "label": "Outgoing Number"
   },
   {
+   "fieldname": "document_attachment",
+   "fieldtype": "Attach Image",
+   "label": "Attach Document"
+  },
+  {
    "fieldname": "teams_link",
    "fieldtype": "Data",
    "label": "MS Teams Link",
    "options": "URL",
-   "reqd": 1
+   "read_only": 0
   },
   {
    "fieldname": "approval_details_section",

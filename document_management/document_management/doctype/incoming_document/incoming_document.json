@@ -12,6 +12,7 @@
   "sender",
   "date_received",
   "incoming_number",
+  "document_attachment",
   "teams_link",
   "processing_details_section",
   "status",
@@ -57,12 +58,17 @@
    "fieldtype": "Data",
    "label": "Incoming Number (Manual)"
   },
+   {
+    "fieldname": "document_attachment",
+    "fieldtype": "Attach Image",
+    "label": "Attach Document"
+   },
   {
    "fieldname": "teams_link",
    "fieldtype": "Data",
    "label": "MS Teams Link",
    "options": "URL",
-   "reqd": 1
+   "read_only": 0
   },
   {
    "fieldname": "processing_details_section",
