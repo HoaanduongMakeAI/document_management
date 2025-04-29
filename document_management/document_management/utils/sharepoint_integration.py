@@ -79,15 +79,17 @@ def create_sharepoint_folder_if_not_exists(drive_id, folder_path):
         folder_check_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{parent_item_id}/children?$filter=name eq '{encoded_segment}'"
 
         try:
+            frappe.msgprint(f"Checking for SharePoint folder segment: '{segment}'...")
             response = requests.get(folder_check_url, headers=headers)
             response.raise_for_status()
             data = response.json()
 
             if data.get("value"): # Folder exists
                 parent_item_id = data["value"][0]["id"]
-                frappe.log_info(f"SharePoint folder segment '{segment}' exists with ID: {parent_item_id}")
+                frappe.msgprint(f"SharePoint folder segment '{segment}' exists.")
+                # frappe.log_info(f"SharePoint folder segment '{segment}' exists with ID: {parent_item_id}") # Keep log for detailed ID if needed
             else: # Folder does not exist, create it
-                frappe.log_info(f"SharePoint folder segment '{segment}' not found. Creating...")
+                frappe.msgprint(f"SharePoint folder segment '{segment}' not found. Creating...")
                 create_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{parent_item_id}/children"
                 folder_data = {
                     "name": segment,
@@ -98,7 +100,8 @@ def create_sharepoint_folder_if_not_exists(drive_id, folder_path):
                 create_response.raise_for_status()
                 new_folder_data = create_response.json()
                 parent_item_id = new_folder_data["id"]
-                frappe.log_info(f"Created SharePoint folder segment '{segment}' with ID: {parent_item_id}")
+                frappe.msgprint(f"Created SharePoint folder segment '{segment}'.")
+                # frappe.log_info(f"Created SharePoint folder segment '{segment}' with ID: {parent_item_id}") # Keep log for detailed ID if needed
 
         except requests.exceptions.RequestException as e:
             err_msg = e.response.text if e.response else str(e)
@@ -130,7 +133,10 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
     base_folder_path = settings.base_folder_path or "General Management/Công văn"
 
     try:
+        frappe.msgprint("Starting SharePoint upload process...")
+        frappe.msgprint(f"Fetching File Doc: {file_doc_name}")
         file_doc = frappe.get_doc("File", file_doc_name)
+        frappe.msgprint(f"Got File Doc. Path: {file_doc.file_url}")
         file_path_rel = file_doc.get_full_path().lstrip('/')
         file_path_abs = get_site_path(file_path_rel)
         if not os.path.exists(file_path_abs):
@@ -148,12 +154,14 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
         target_folder_rel_path = target_folder_rel_path.strip('/')
 
         # --- Ensure Folder Exists ---
+        frappe.msgprint(f"Ensuring SharePoint folder exists: '{target_folder_rel_path}'")
         folder_id = create_sharepoint_folder_if_not_exists(sharepoint_drive_id, target_folder_rel_path)
         if not folder_id:
              # Error handled within create_sharepoint_folder_if_not_exists
              return None
 
         # --- Upload File ---
+        frappe.msgprint(f"Target SharePoint folder confirmed (ID: {folder_id}). Preparing file upload...")
         encoded_file_name = encode(file_name)
         # Use item ID for parent folder reference - more reliable than path
         upload_url_base = f"https://graph.microsoft.com/v1.0/drives/{sharepoint_drive_id}/items/{folder_id}:/{encoded_file_name}:"
@@ -174,14 +182,17 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
             with open(file_path_abs, "rb") as f:
                 file_content = f.read()
 
-            frappe.log_info(f"Attempting SharePoint small file upload to item ID '{folder_id}' with name '{encoded_file_name}'")
+            # frappe.log_info(f"Attempting SharePoint small file upload to item ID '{folder_id}' with name '{encoded_file_name}'")
+            frappe.msgprint(f"Uploading file '{file_name}' to SharePoint folder '{target_folder_rel_path}'...")
             response = requests.put(upload_url, headers=headers, data=file_content)
             response.raise_for_status() # Raise HTTPError for bad responses
             upload_result = response.json()
+            frappe.msgprint(f"File '{file_name}' uploaded successfully.")
 
         frappe.log_info(f"SharePoint upload response: {upload_result}")
 
         # --- Create Document Version Entry ---
+        frappe.msgprint("Creating document version entry...")
         sharepoint_link = upload_result.get("webUrl")
         # Use the item ID from the upload response as a more stable version indicator if available
         version_id = upload_result.get("id", upload_result.get("eTag", "N/A"))
@@ -206,16 +217,19 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
                 # file_doc.db_set("attached_to_doctype", None)
                 # file_doc.db_set("attached_to_name", None)
                 # frappe.delete_doc("File", file_doc.name, ignore_permissions=True, force=True) # Be very careful with force=True
-                frappe.log_info(f"Removed local file '{file_path_abs}' after SharePoint upload for '{doc.name}'.")
+                # frappe.log_info(f"Removed local file '{file_path_abs}' after SharePoint upload for '{doc.name}'.")
+                frappe.msgprint(f"Removed local file '{file_path_abs}'.")
                 # Update the child table entry's file_url after deletion
                 frappe.db.set_value("Document Version", new_version.name, "file_url", None)
             except Exception as del_err:
                 frappe.log_error(f"Failed to delete local file '{file_path_abs}': {del_err}")
 
 
-        frappe.log_info(f"Successfully uploaded '{file_name}' to SharePoint for document '{doc.name}'. Link: {sharepoint_link}")
+        # frappe.log_info(f"Successfully uploaded '{file_name}' to SharePoint for document '{doc.name}'. Link: {sharepoint_link}")
+        frappe.msgprint(f"Document version created. SharePoint Link: {sharepoint_link}")
         # Save the document to persist the new child table row
         doc.save(ignore_permissions=True) # Save needed to persist child table changes made via .append()
+        frappe.msgprint("SharePoint upload process completed successfully.")
         return {"sharepoint_link": sharepoint_link, "version_id": version_id}
 
     except requests.exceptions.RequestException as e:
