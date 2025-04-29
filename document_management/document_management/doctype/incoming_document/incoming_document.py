@@ -46,15 +46,14 @@ class IncomingDocument(Document):
 					# The upload function might handle appending to the child table (versions) if needed
 				else:
 					# Handle cases where upload might succeed but doesn't return a link
-					frappe.log_warning(f"SharePoint upload for '{file_doc_name}' in Incoming Document '{self.name}' completed but returned no link or failed silently.", upload_result)
+					frappe.msgprint(f"SharePoint upload for '{file_doc_name}' in Incoming Document '{self.name}' completed but returned no link or failed silently. Result: {upload_result}", indicator="orange", alert=True)
 					# Decide if self.teams_link should be cleared or kept as is
 					# self.teams_link = None
 
 			except Exception as e:
 				# Error is logged and potentially thrown within upload_file_to_sharepoint
 				# Log it here as well for context
-				frappe.log_error(f"SharePoint upload failed for '{file_doc_name}' in Incoming Document '{self.name}': {e}")
-				frappe.msgprint(f"SharePoint upload failed: {e}", indicator="red", raise_exception=False, alert=True)
+				frappe.throw(f"SharePoint upload failed for '{file_doc_name}' in Incoming Document '{self.name}': {e}")
 				# Consider clearing the link if upload fails definitively
 				# self.teams_link = None
 				# Optionally, clear the attachment field so user has to re-attach
