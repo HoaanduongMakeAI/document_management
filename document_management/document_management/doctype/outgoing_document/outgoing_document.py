@@ -18,7 +18,7 @@ class OutgoingDocument(Document):
 		"""
 		# Check if the document_attachment field exists and has changed
 		if self.has_value_changed("document_attachment") and self.document_attachment:
-			frappe.logger.info(f"New attachment '{self.document_attachment}' detected for Outgoing Document '{self.name}'. Attempting SharePoint upload.")
+			frappe.msgprint(f"New attachment '{self.document_attachment}' detected for Outgoing Document '{self.name}'. Attempting SharePoint upload.")
 
 			# Extract the File DocType name from the URL stored in the Attach Image field
 			file_doc_name = self.document_attachment.split("/")[-1]
