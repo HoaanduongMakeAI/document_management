@@ -13,8 +13,9 @@
   "recipient",
   "date_issued",
   "outgoing_number",
-  "document_attachment",
   "teams_link",
+  "upload_to_sharepoint_btn",
+  "document_attachment",
   "approval_details_section",
   "approval_status",
   "created_by_user",
@@ -67,14 +68,21 @@
   {
    "fieldname": "document_attachment",
    "fieldtype": "Attach",
-   "label": "Attach Document"
+   "label": "Attach Document",
+   "hidden": 1
   },
   {
    "fieldname": "teams_link",
    "fieldtype": "Data",
    "label": "MS Teams Link",
    "options": "URL",
-   "read_only": 0
+   "read_only": 1
+  },
+  {
+   "fieldname": "upload_to_sharepoint_btn",
+   "fieldtype": "Button",
+   "label": "Attach File",
+   "insert_after": "teams_link"
   },
   {
    "fieldname": "approval_details_section",

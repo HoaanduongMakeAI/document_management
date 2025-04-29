@@ -12,8 +12,9 @@
   "sender",
   "date_received",
   "incoming_number",
-  "document_attachment",
   "teams_link",
+  "upload_to_sharepoint_btn",
+  "document_attachment",
   "processing_details_section",
   "status",
   "assigned_to",
@@ -61,14 +62,21 @@
    {
     "fieldname": "document_attachment",
     "fieldtype": "Attach",
-    "label": "Attach Document"
+    "label": "Attach Document",
+    "hidden": 1
    },
   {
    "fieldname": "teams_link",
    "fieldtype": "Data",
    "label": "MS Teams Link",
    "options": "URL",
-   "read_only": 0
+   "read_only": 1
+  },
+  {
+   "fieldname": "upload_to_sharepoint_btn",
+   "fieldtype": "Button",
+   "label": "Attach File",
+   "insert_after": "teams_link"
   },
   {
    "fieldname": "processing_details_section",
