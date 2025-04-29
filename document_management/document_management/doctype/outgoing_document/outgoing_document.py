@@ -18,13 +18,13 @@ class OutgoingDocument(Document):
 		"""
 		# Check if the document_attachment field exists and has changed
 		if self.has_value_changed("document_attachment") and self.document_attachment:
-			frappe.log_info(f"New attachment '{self.document_attachment}' detected for Outgoing Document '{self.name}'. Attempting SharePoint upload.")
+			frappe.logger.info(f"New attachment '{self.document_attachment}' detected for Outgoing Document '{self.name}'. Attempting SharePoint upload.")
 
 			# Extract the File DocType name from the URL stored in the Attach Image field
 			file_doc_name = self.document_attachment.split("/")[-1]
 
 			if not frappe.db.exists("File", file_doc_name):
-				frappe.log_error(f"File DocType '{file_doc_name}' not found for attachment URL '{self.document_attachment}' in Outgoing Document '{self.name}'.")
+				frappe.logger.error(f"File DocType '{file_doc_name}' not found for attachment URL '{self.document_attachment}' in Outgoing Document '{self.name}'.")
 				return # Exit before attempting upload
 
 			action_details = {
@@ -40,10 +40,10 @@ class OutgoingDocument(Document):
 					self.teams_link = upload_result["sharepoint_link"]
 					frappe.msgprint(f"File uploaded to SharePoint: {self.teams_link}", indicator="green", alert=True)
 				else:
-					frappe.log_warning(f"SharePoint upload for '{file_doc_name}' in Outgoing Document '{self.name}' completed but returned no link or failed silently.", upload_result)
+					frappe.logger.warning(f"SharePoint upload for '{file_doc_name}' in Outgoing Document '{self.name}' completed but returned no link or failed silently.", upload_result)
 
 			except Exception as e:
-				frappe.log_error(f"SharePoint upload failed for '{file_doc_name}' in Outgoing Document '{self.name}': {e}")
+				frappe.logger.error(f"SharePoint upload failed for '{file_doc_name}' in Outgoing Document '{self.name}': {e}")
 				frappe.msgprint(f"SharePoint upload failed: {e}", indicator="red", raise_exception=False, alert=True)
 				# self.teams_link = None # Optional: Clear link on failure
 				# self.document_attachment = None # Optional: Clear attachment on failure
