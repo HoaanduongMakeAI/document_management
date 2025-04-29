@@ -60,7 +60,7 @@
   },
    {
     "fieldname": "document_attachment",
-    "fieldtype": "Attach Image",
+    "fieldtype": "Attach",
     "label": "Attach Document"
    },
   {
