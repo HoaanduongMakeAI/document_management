@@ -44,7 +44,7 @@ def get_access_token():
    
     	return access_token
     except Exception as e:
-    	frappe.log_error(f"Error getting token for Connected App '{settings.connected_app}': {e}", traceback=True)
+    	# Removed redundant log_error before throw
     	frappe.throw(f"Failed to get access token from Connected App '{settings.connected_app}': {e}")
 
 def get_headers():
@@ -105,11 +105,11 @@ def create_sharepoint_folder_if_not_exists(drive_id, folder_path):
 
         except requests.exceptions.RequestException as e:
             err_msg = e.response.text if e.response else str(e)
-            frappe.log_error(f"Error checking/creating SharePoint folder '{current_path}': {err_msg}")
+            # Removed redundant log_error before throw
             frappe.throw(f"Failed to ensure SharePoint folder structure exists: {err_msg}")
             return None
         except Exception as e:
-             frappe.log_error(f"Unexpected error checking/creating SharePoint folder '{current_path}': {e}", traceback=True)
+             # Removed redundant log_error before throw
              frappe.throw(f"Unexpected error ensuring SharePoint folder structure: {e}")
              return None
 
@@ -222,7 +222,9 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
                 # Update the child table entry's file_url after deletion
                 frappe.db.set_value("Document Version", new_version.name, "file_url", None)
             except Exception as del_err:
-                frappe.log_error(f"Failed to delete local file '{file_path_abs}': {del_err}")
+                # Log deletion error but don't necessarily stop the whole process, maybe just msgprint?
+                # Or throw if deletion is critical? User asked for throw.
+                frappe.throw(f"Failed to delete local file '{file_path_abs}': {del_err}")
 
 
         # frappe.log_info(f"Successfully uploaded '{file_name}' to SharePoint for document '{doc.name}'. Link: {sharepoint_link}")
@@ -234,11 +236,11 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
 
     except requests.exceptions.RequestException as e:
         err_msg = e.response.text if e.response else str(e)
-        frappe.log_error(f"SharePoint API Error for {doc.name}: {err_msg}")
+        # Removed redundant log_error before throw
         frappe.throw(f"Failed to upload file to SharePoint: {err_msg}")
         return None
     except Exception as e:
-        frappe.log_error(f"Error during SharePoint upload process for {doc.name}: {e}", traceback=True)
+        # Removed redundant log_error before throw
         frappe.throw(f"An unexpected error occurred during SharePoint upload: {e}")
         return None
 
