@@ -23,7 +23,7 @@ frappe.ui.form.on('Outgoing Document', {
 
                             // Call the server-side whitelisted function for Outgoing Document
                             frappe.call({
-                                method: 'document_management.document_management.document_management.doctype.outgoing_document.outgoing_document.upload_outgoing_file_via_modal', // Correct method path
+                                method: 'document_management.document_management.doctype.outgoing_document.outgoing_document.upload_outgoing_file_via_modal', // Correct method path
                                 args: {
                                     docname: frm.doc.name,
                                     file_doc_name: file_doc_name

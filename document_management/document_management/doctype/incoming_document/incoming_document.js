@@ -24,7 +24,7 @@ frappe.ui.form.on('Incoming Document', {
 
                             // Call the server-side whitelisted function
                             frappe.call({
-                                method: 'document_management.document_management.document_management.doctype.incoming_document.incoming_document.upload_file_via_modal',
+                                method: 'document_management.document_management.doctype.incoming_document.incoming_document.upload_file_via_modal',
                                 args: {
                                     docname: frm.doc.name,
                                     file_doc_name: file_doc_name
