@@ -24,7 +24,7 @@ class OutgoingDocument(Document):
 			file_doc_name = self.document_attachment.split("/")[-1]
 
 			if not frappe.db.exists("File", file_doc_name):
-				frappe.logger.error(f"File DocType '{file_doc_name}' not found for attachment URL '{self.document_attachment}' in Outgoing Document '{self.name}'.")
+				frappe.logger.error(f"File '{file_doc_name}' not found for '{self.document_attachment}' in '{self.name}'.")
 				return # Exit before attempting upload
 
 			action_details = {
@@ -40,10 +40,10 @@ class OutgoingDocument(Document):
 					self.teams_link = upload_result["sharepoint_link"]
 					frappe.msgprint(f"File uploaded to SharePoint: {self.teams_link}", indicator="green", alert=True)
 				else:
-					frappe.logger.warning(f"SharePoint upload for '{file_doc_name}' in Outgoing Document '{self.name}' completed but returned no link or failed silently.", upload_result)
+					frappe.logger.warning(f"SharePoint upload for '{file_doc_name}' in '{self.name}' completed but returned no link or failed silently.", upload_result)
 
 			except Exception as e:
-				frappe.logger.error(f"SharePoint upload failed for '{file_doc_name}' in Outgoing Document '{self.name}': {e}")
+				frappe.logger.error(f"SharePoint upload failed for '{file_doc_name}' in '{self.name}': {e}")
 				frappe.msgprint(f"SharePoint upload failed: {e}", indicator="red", raise_exception=False, alert=True)
 				# self.teams_link = None # Optional: Clear link on failure
 				# self.document_attachment = None # Optional: Clear attachment on failure

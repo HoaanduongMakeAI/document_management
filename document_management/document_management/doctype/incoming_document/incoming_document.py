@@ -24,7 +24,7 @@ class IncomingDocument(Document):
 			file_doc_name = self.document_attachment.split("/")[-1]
 
 			if not frappe.db.exists("File", file_doc_name):
-				frappe.log_error(f"File DocType '{file_doc_name}' not found for attachment URL '{self.document_attachment}' in Incoming Document '{self.name}'.")
+				frappe.log_error(f"File '{file_doc_name}' not found for '{self.document_attachment}' in '{self.name}'.")
 				# Optionally clear the attachment field or throw an error
 				# self.document_attachment = None
 				# frappe.throw(f"Attached file record not found: {file_doc_name}")
