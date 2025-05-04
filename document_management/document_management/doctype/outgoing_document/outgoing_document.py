@@ -14,48 +14,4 @@ class OutgoingDocument(Document):
 	# before_save hook is removed. Upload logic is now triggered manually via upload_outgoing_file_via_modal.
 	pass
 
-# Whitelisted function to be called from the client-side script
-@frappe.whitelist()
-def upload_outgoing_file_via_modal(docname, file_doc_name):
-	"""
-	Uploads a file (already uploaded to Frappe's File doctype) to SharePoint
-	and updates the Outgoing Document's teams_link field.
-
-	:param docname: Name of the Outgoing Document record.
-	:param file_doc_name: Name of the File record (already created by Frappe's uploader).
-	"""
-	try:
-		# Get the Outgoing Document
-		doc = frappe.get_doc("Outgoing Document", docname)
-
-		# Verify the File doctype exists
-		if not frappe.db.exists("File", file_doc_name):
-			frappe.throw(f"File record '{file_doc_name}' not found. Upload aborted.")
-			return {"error": f"File record '{file_doc_name}' not found."}
-
-		action_details = {
-			"action": "Upload via Modal",
-			"user": frappe.session.user
-		}
-
-		# Call the existing SharePoint upload utility function
-		upload_result = upload_file_to_sharepoint(doc, file_doc_name, action_details)
-
-		if upload_result and upload_result.get("sharepoint_link"):
-			sharepoint_link = upload_result["sharepoint_link"]
-			# Update the teams_link field on the document
-			doc.db_set("teams_link", sharepoint_link, update_modified=False) # Use db_set to avoid triggering save hooks again
-			frappe.msgprint(f"File uploaded to SharePoint: {sharepoint_link}", indicator="green", alert=True)
-			return {"sharepoint_link": sharepoint_link}
-		else:
-			error_msg = f"SharePoint upload for '{file_doc_name}' completed but returned no link or failed. Result: {upload_result}"
-			frappe.msgprint(error_msg, indicator="orange", alert=True)
-			return {"error": error_msg}
-
-	except Exception as e:
-		error_msg = f"SharePoint upload failed for file '{file_doc_name}' on document '{docname}': {e}"
-		frappe.log_error(frappe.get_traceback(), f"SharePoint Upload Error (Outgoing Document: {docname})")
-		frappe.throw(error_msg) # Throw to notify client-side of failure
-		return {"error": str(e)}
-
-	# TODO: Add workflow state change hooks if needed
+# Whitelisted functions moved to utils/sharepoint_integration.py

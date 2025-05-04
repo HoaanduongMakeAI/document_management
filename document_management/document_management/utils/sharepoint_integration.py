@@ -8,6 +8,83 @@ from frappe.utils import get_site_path, get_files_path, encode
 # Import the helper function to get settings
 from document_management.document_management.utils import get_settings # Updated import path
 
+@frappe.whitelist()
+def get_latest_file_doc_name_by_url(file_url):
+	"""
+	Finds the most recently created File document matching the given file_url.
+
+	:param file_url: The file_url from the Attach field.
+	:return: The name (hash) of the File document or None.
+	"""
+	if not file_url:
+		frappe.log_error("get_latest_file_doc_name_by_url called with empty file_url", "SharePoint Integration")
+		return None
+
+	try:
+		file_doc_name = frappe.db.get_value(
+			"File",
+			filters={"file_url": file_url},
+			fieldname="name",
+			order_by="creation desc",
+		)
+		if not file_doc_name:
+			frappe.log_error(f"No File found for file_url: {file_url}", "SharePoint Integration")
+		return file_doc_name
+	except Exception as e:
+		frappe.log_error(f"Error fetching File for url {file_url}: {e}", "SharePoint Integration")
+		return None
+@frappe.whitelist()
+def upload_file_via_modal(doctype, docname, file_doc_name):
+	"""
+	Uploads a file (already uploaded to Frappe's File doctype) to SharePoint
+	and updates the specified document's teams_link field.
+
+	:param doctype: The DocType of the document to update (e.g., "Incoming Document").
+	:param docname: Name of the document record.
+	:param file_doc_name: Name of the File record (hash).
+	"""
+	if not doctype or not docname or not file_doc_name:
+		frappe.throw("Missing required arguments: doctype, docname, or file_doc_name.")
+		return {"error": "Missing required arguments."}
+
+	try:
+		# Get the document dynamically
+		doc = frappe.get_doc(doctype, docname)
+
+		# Verify the File doctype exists
+		if not frappe.db.exists("File", file_doc_name):
+			frappe.throw(f"File record '{file_doc_name}' not found. Upload aborted.")
+			# No need for return here as throw stops execution
+
+		action_details = {
+			"action": "Upload via Modal",
+			"user": frappe.session.user
+		}
+
+		# Call the existing SharePoint upload utility function
+		# This function already handles folder creation and versioning
+		upload_result = upload_file_to_sharepoint(doc, file_doc_name, action_details)
+
+		if upload_result and upload_result.get("sharepoint_link"):
+			sharepoint_link = upload_result["sharepoint_link"]
+			# Update the teams_link field on the document
+			# Use db_set to avoid triggering save hooks again and ensure update
+			frappe.db.set_value(doctype, docname, "teams_link", sharepoint_link, update_modified=False)
+			frappe.msgprint(f"File uploaded to SharePoint: {sharepoint_link}", indicator="green", alert=True)
+			return {"sharepoint_link": sharepoint_link}
+		else:
+			error_msg = f"SharePoint upload for '{file_doc_name}' completed but returned no link or failed. Result: {upload_result}"
+			frappe.msgprint(error_msg, indicator="orange", alert=True)
+			# Log the error as well for backend visibility
+			frappe.log_error(error_msg, f"SharePoint Upload Issue ({doctype}: {docname})")
+			return {"error": error_msg}
+
+	except Exception as e:
+		error_msg = f"SharePoint upload failed for file '{file_doc_name}' on document '{doctype} {docname}': {e}"
+		frappe.log_error(frappe.get_traceback(), f"SharePoint Upload Error ({doctype}: {docname})")
+		frappe.throw(error_msg) # Throw to notify client-side of failure
+		# The return below might not be reached due to throw
+		# return {"error": str(e)}
 def get_sharepoint_settings():
     """Wrapper to get and validate SharePoint settings."""
     # settings = get_settings() # Fetches the singleton DocType instance

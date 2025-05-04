@@ -16,43 +16,88 @@ frappe.ui.form.on('Outgoing Document', {
                     function(values) {
                         if (values && values.file_upload) {
                             let file_url = values.file_upload;
-                            // Extract the file_doc_name from the URL
-                            let file_doc_name = file_url.split('/').pop();
 
-                            frappe.show_alert({ message: __('Uploading to SharePoint...'), indicator: 'blue' });
+                            frappe.show_alert({ message: __('Fetching file details...'), indicator: 'blue' });
 
-                            // Call the server-side whitelisted function for Outgoing Document
+                            // Step 1: Get the File DocType name (hash) from the file_url
                             frappe.call({
-                                method: 'document_management.document_management.doctype.outgoing_document.outgoing_document.upload_outgoing_file_via_modal', // Correct method path
+                                method: 'document_management.document_management.utils.sharepoint_integration.get_latest_file_doc_name_by_url',
                                 args: {
-                                    docname: frm.doc.name,
-                                    file_doc_name: file_doc_name
+                                    file_url: file_url
                                 },
                                 callback: function(r) {
-                                    if (r.message && r.message.sharepoint_link) {
-                                        // Update the teams_link field on the form
-                                        frm.set_value('teams_link', r.message.sharepoint_link);
-                                        frappe.show_alert({ message: __('File successfully uploaded and linked.'), indicator: 'green' });
-                                        frm.save(); // Optionally save the form after successful upload
-                                    } else if (r.message && r.message.error) {
-                                        frappe.msgprint({
-                                            title: __('SharePoint Upload Error'),
-                                            indicator: 'red',
-                                            message: r.message.error
-                                        });
+                                    if (r.message) {
+                                        let file_doc_name = r.message;
+
+                                        if (file_doc_name) {
+                                            frappe.show_alert({ message: __('File details fetched. Uploading to SharePoint...'), indicator: 'blue' });
+
+                                            // Step 2: Call the generalized upload function with doctype, docname, and file_doc_name
+                                            frappe.call({
+                                                method: 'document_management.document_management.utils.sharepoint_integration.upload_file_via_modal', // Call the generalized utility function
+                                                args: {
+                                                    doctype: frm.doc.doctype, // Pass the doctype
+                                                    docname: frm.doc.name,
+                                                    file_doc_name: file_doc_name // Pass the file hash
+                                                },
+                                                callback: function(r) {
+                                                    if (r.message && r.message.sharepoint_link) {
+                                                        // Update the teams_link field on the form
+                                                        frm.set_value('teams_link', r.message.sharepoint_link);
+                                                        frappe.show_alert({ message: __('File successfully uploaded and linked.'), indicator: 'green' });
+                                                        frm.save(); // Optionally save the form after successful upload
+                                                    } else if (r.message && r.message.error) {
+                                                        frappe.msgprint({
+                                                            title: __('SharePoint Upload Error'),
+                                                            indicator: 'red',
+                                                            message: r.message.error
+                                                        });
+                                                    } else if (r.exc) {
+                                                        // Handle Python exceptions thrown by frappe.throw
+                                                        frappe.msgprint({
+                                                            title: __('Server Error'),
+                                                            indicator: 'red',
+                                                            message: __('An error occurred during SharePoint upload. Please check server logs.')
+                                                        });
+                                                        console.error("SharePoint Upload Error:", r.exc);
+                                                    } else {
+                                                         frappe.msgprint({
+                                                            title: __('Upload Issue'),
+                                                            indicator: 'orange',
+                                                            message: __('Upload completed but no link was returned. Please check the document and SharePoint.')
+                                                        });
+                                                    }
+                                                },
+                                                error: function(r) {
+                                                     frappe.msgprint({
+                                                        title: __('Network Error'),
+                                                        indicator: 'red',
+                                                        message: __('Failed to communicate with the server for SharePoint upload.')
+                                                    });
+                                                    console.error("AJAX Error:", r);
+                                                }
+                                            });
+                                        } else {
+                                            // Handle case where file_doc_name was not returned
+                                            frappe.msgprint({
+                                                title: __('File Not Found'),
+                                                indicator: 'red',
+                                                message: __('Could not find the uploaded file record. Please try uploading again.')
+                                            });
+                                        }
                                     } else if (r.exc) {
-                                        // Handle Python exceptions thrown by frappe.throw
+                                         // Handle Python exceptions from get_latest_file_doc_name_by_url
                                         frappe.msgprint({
                                             title: __('Server Error'),
                                             indicator: 'red',
-                                            message: __('An error occurred during SharePoint upload. Please check server logs.')
+                                            message: __('An error occurred while fetching file details. Please check server logs.')
                                         });
-                                        console.error("SharePoint Upload Error:", r.exc);
+                                        console.error("Get File Details Error:", r.exc);
                                     } else {
-                                         frappe.msgprint({
-                                            title: __('Upload Issue'),
+                                        frappe.msgprint({
+                                            title: __('File Details Issue'),
                                             indicator: 'orange',
-                                            message: __('Upload completed but no link was returned. Please check the document and SharePoint.')
+                                            message: __('Could not retrieve file details. Please try again.')
                                         });
                                     }
                                 },
@@ -60,7 +105,7 @@ frappe.ui.form.on('Outgoing Document', {
                                      frappe.msgprint({
                                         title: __('Network Error'),
                                         indicator: 'red',
-                                        message: __('Failed to communicate with the server for SharePoint upload.')
+                                        message: __('Failed to communicate with the server for file details.')
                                     });
                                     console.error("AJAX Error:", r);
                                 }
