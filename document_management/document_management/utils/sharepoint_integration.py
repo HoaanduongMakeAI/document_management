@@ -263,7 +263,9 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
             # Simple PUT for smaller files
             upload_url = f"{upload_url_base}/content"
             headers = get_headers()
-            headers["Content-Type"] = file_doc.content_type or "application/octet-stream"
+            # Safely get content_type, default if missing
+            content_type = getattr(file_doc, "content_type", None) or "application/octet-stream"
+            headers["Content-Type"] = content_type
 
             with open(file_path_abs, "rb") as f:
                 file_content = f.read()
