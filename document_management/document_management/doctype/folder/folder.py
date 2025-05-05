@@ -3,7 +3,8 @@
 
 import frappe
 from frappe.model.document import Document
-from document_management.document_management.document_management.utils.sharepoint_integration import create_sharepoint_folder_if_not_exists
+# Corrected import path
+from document_management.document_management.utils.sharepoint_integration import create_sharepoint_folder_if_not_exists
 
 class Folder(Document):
     # This method is called after the document is saved (created or updated)

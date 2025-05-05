@@ -5,8 +5,8 @@ import frappe
 from frappe.model.document import Document
 import requests
 
-# Import the new utility function
-from document_management.document_management.document_management.utils.sharepoint_integration import get_sharepoint_site_and_drive_ids_for_group
+# Import the new utility function (Corrected Path)
+from document_management.document_management.utils.sharepoint_integration import get_sharepoint_site_and_drive_ids_for_group
 
 @frappe.whitelist()
 def fetch_sharepoint_ids_from_group():

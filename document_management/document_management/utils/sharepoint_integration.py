@@ -304,7 +304,8 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
             settings = get_sharepoint_settings() # Fetches settings, validates required fields like connected_app, entra_group_id
             if not settings.sharepoint_drive_id:
                  # Attempt to fetch IDs if missing in settings
-                 from document_management.document_management.document_management.doctype.document_management_settings.document_management_settings import fetch_sharepoint_ids_from_group
+                 # Corrected import path below
+                 from document_management.document_management.doctype.document_management_settings.document_management_settings import fetch_sharepoint_ids_from_group
                  try:
                      ids = fetch_sharepoint_ids_from_group()
                      settings.reload() # Reload to get updated IDs

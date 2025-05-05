@@ -3,8 +3,8 @@
 
 import frappe
 from frappe.model.document import Document
-# Import the centralized utility function
-from document_management.document_management.document_management.utils.sharepoint_integration import get_sharepoint_site_and_drive_ids_for_group
+# Import the centralized utility function (Corrected Path)
+from document_management.document_management.utils.sharepoint_integration import get_sharepoint_site_and_drive_ids_for_group
 
 class MicrosoftEntraGroup(Document):
     # This method is called before the document is saved
