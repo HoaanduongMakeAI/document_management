@@ -214,9 +214,11 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
         frappe.msgprint(f"Fetching File Doc: {file_doc_name}")
         file_doc = frappe.get_doc("File", file_doc_name)
         frappe.msgprint(f"Got File Doc. Path: {file_doc.file_url}")
-        file_path_rel = file_doc.get_full_path().lstrip('/')
-        file_path_abs = get_site_path(file_path_rel)
+        # Use file_url directly with get_site_path for correct absolute path construction
+        file_path_abs = get_site_path(file_doc.file_url)
         if not os.path.exists(file_path_abs):
+            # Log the expected path for debugging if it still fails
+            frappe.log_error(f"Expected file path: {file_path_abs}", "SharePoint Integration File Not Found")
             frappe.throw(f"File not found at path: {file_path_abs}")
 
         file_name = file_doc.file_name
