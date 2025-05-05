@@ -129,6 +129,67 @@ def get_headers():
     token = get_access_token()
     return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
+def get_sharepoint_site_and_drive_ids_for_group(group_id):
+    """
+    Fetches the SharePoint Site ID and the default Document Library Drive ID for a given Microsoft Entra Group ID.
+
+    Args:
+        group_id (str): The ID of the Microsoft Entra Group.
+
+    Returns:
+        tuple: (site_id, drive_id) or raises an exception on failure.
+    """
+    if not group_id:
+        frappe.throw("Microsoft Entra Group ID is required to fetch SharePoint IDs.")
+
+    # Ensure Connected App is configured (needed for get_headers)
+    settings = get_sharepoint_settings() # This checks for connected_app implicitly
+
+    headers = get_headers() # Fetches token using settings.connected_app
+
+    try:
+        # Get SharePoint site associated with the group
+        site_url = f"https://graph.microsoft.com/v1.0/groups/{group_id}/sites/root"
+        frappe.msgprint(f"Fetching site info from: {site_url}")
+        site_response = requests.get(site_url, headers=headers)
+        site_response.raise_for_status() # Check for HTTP errors
+        site_data = site_response.json()
+        site_id = site_data.get("id")
+        if not site_id:
+            frappe.throw(f"Could not retrieve SharePoint Site ID for Group ID: {group_id}. Response: {site_data}")
+        frappe.msgprint(f"Found Site ID: {site_id}")
+
+        # Get drives (document libraries) within the site
+        drives_url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drives"
+        frappe.msgprint(f"Fetching drives from: {drives_url}")
+        drives_response = requests.get(drives_url, headers=headers)
+        drives_response.raise_for_status()
+        drives_data = drives_response.json()
+        drive_id = None
+        if drives_data.get("value"):
+            # Prioritize the 'Documents' library if it exists
+            for drive in drives_data["value"]:
+                if drive.get("name", "").lower() == "documents":
+                    drive_id = drive.get("id")
+                    frappe.msgprint(f"Found 'Documents' Drive ID: {drive_id}")
+                    break
+            # Fallback to the first drive if 'Documents' is not found
+            if not drive_id and drives_data["value"]:
+                drive_id = drives_data["value"][0].get("id")
+                frappe.msgprint(f"Using first Drive ID as fallback: {drive_id}")
+        
+        if not drive_id:
+            frappe.throw(f"Could not retrieve any Drive ID for Site ID: {site_id}. Response: {drives_data}")
+
+        return site_id, drive_id
+
+    except requests.exceptions.RequestException as e:
+        err_msg = e.response.text if e.response else str(e)
+        frappe.log_error(f"Graph API Error fetching IDs for group {group_id}: {err_msg}", "SharePoint Integration Error")
+        frappe.throw(f"Error communicating with Microsoft Graph API while fetching IDs for group {group_id}: {err_msg}")
+    except Exception as e:
+        frappe.log_error(f"Unexpected error fetching IDs for group {group_id}: {frappe.get_traceback()}", "SharePoint Integration Error")
+        frappe.throw(f"An unexpected error occurred while fetching SharePoint IDs for group {group_id}: {str(e)}")
 def create_sharepoint_folder_if_not_exists(drive_id, folder_path):
     """
     Checks if a folder exists at the specified path within a drive, creates it if not.
@@ -212,12 +273,60 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
     Returns:
         dict: {'sharepoint_link': '...', 'version_id': '...'} or None if upload fails.
     """
-    settings = get_sharepoint_settings()
-    sharepoint_drive_id = settings.sharepoint_drive_id
-    base_folder_path = settings.base_folder_path or "General Management/Công văn"
-
     try:
         frappe.msgprint("Starting SharePoint upload process...")
+
+        # --- Determine Target Drive and Folder Path ---
+        target_folder_rel_path = None
+        sharepoint_drive_id = None
+
+        if doc.get("folder"):
+            try:
+                folder_doc = frappe.get_doc("Folder", doc.folder)
+                if not folder_doc.microsoft_entra_group:
+                     frappe.throw(f"Folder '{doc.folder}' does not have a Microsoft Entra Group linked.")
+                
+                group_doc = frappe.get_doc("Microsoft Entra Group", folder_doc.microsoft_entra_group)
+                if not group_doc.sharepoint_drive_id:
+                     frappe.throw(f"Linked Microsoft Entra Group '{folder_doc.microsoft_entra_group}' for Folder '{doc.folder}' is missing its SharePoint Drive ID.")
+
+                sharepoint_drive_id = group_doc.sharepoint_drive_id
+                # Use the path directly from the Folder doc. Do not strip slashes here.
+                target_folder_rel_path = folder_doc.folder_path
+                frappe.msgprint(f"Using specified Folder: '{doc.folder}' (Path: {target_folder_rel_path}, Drive: {sharepoint_drive_id})")
+
+            except frappe.DoesNotExistError:
+                 frappe.throw(f"Specified Folder '{doc.folder}' not found.")
+            except Exception as e:
+                 frappe.throw(f"Error fetching details for specified Folder '{doc.folder}': {e}")
+        else:
+            frappe.msgprint("No specific Folder selected, using default settings.")
+            settings = get_sharepoint_settings() # Fetches settings, validates required fields like connected_app, entra_group_id
+            if not settings.sharepoint_drive_id:
+                 # Attempt to fetch IDs if missing in settings
+                 from document_management.document_management.document_management.doctype.document_management_settings.document_management_settings import fetch_sharepoint_ids_from_group
+                 try:
+                     ids = fetch_sharepoint_ids_from_group()
+                     settings.reload() # Reload to get updated IDs
+                     sharepoint_drive_id = settings.sharepoint_drive_id
+                     if not sharepoint_drive_id:
+                          frappe.throw("SharePoint Drive ID is still missing in Document Management Settings even after attempting to fetch.")
+                 except Exception as fetch_e:
+                      frappe.throw(f"SharePoint Drive ID is missing in Document Management Settings and failed to fetch automatically: {fetch_e}")
+            else:
+                 sharepoint_drive_id = settings.sharepoint_drive_id
+
+            # Use base_folder_path from settings, default if empty. Do not strip slashes here.
+            target_folder_rel_path = settings.base_folder_path or "Uncategorized"
+            frappe.msgprint(f"Using default settings path: '{target_folder_rel_path}' (Drive: {sharepoint_drive_id})")
+
+        if not sharepoint_drive_id or target_folder_rel_path is None:
+             frappe.throw("Could not determine SharePoint Drive ID or target folder path.")
+
+        # Validate the determined path is not empty or just root after potential whitespace strip
+        if not target_folder_rel_path.strip() or target_folder_rel_path.strip() == "/":
+             frappe.throw(f"Target folder path '{target_folder_rel_path}' is invalid.")
+
         frappe.msgprint(f"Fetching File Doc: {file_doc_name}")
         file_doc = frappe.get_doc("File", file_doc_name)
         frappe.msgprint(f"Got File Doc. Path: {file_doc.file_url}")
@@ -230,17 +339,10 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
 
         file_name = file_doc.file_name
 
-        # --- Determine Target Folder ---
-        year = frappe.utils.now_datetime().strftime("%Y")
-        doctype_folder = doc.doctype.replace(" ", "_")
-        safe_doc_name = "".join(c if c.isalnum() or c in (' ', '_', '-') else '_' for c in doc.name).rstrip()
-        doc_name_folder = safe_doc_name
-
-        target_folder_rel_path = f"{base_folder_path}/{year}/{doctype_folder}/{doc_name_folder}"
-        target_folder_rel_path = target_folder_rel_path.strip('/')
-
-        # --- Ensure Folder Exists ---
-        frappe.msgprint(f"Ensuring SharePoint folder exists: '{target_folder_rel_path}'")
+        # --- Ensure Base Folder Exists ---
+        # The target_folder_rel_path is now determined above based on doc.folder or settings.
+        # Pass the raw path to the function, it handles stripping/splitting.
+        frappe.msgprint(f"Ensuring SharePoint base folder exists: '{target_folder_rel_path}'")
         folder_id = create_sharepoint_folder_if_not_exists(sharepoint_drive_id, target_folder_rel_path)
         if not folder_id:
              # Error handled within create_sharepoint_folder_if_not_exists
@@ -271,7 +373,9 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
                 file_content = f.read()
 
             # frappe.msgprint(f"Attempting SharePoint small file upload to item ID '{folder_id}' with name '{encoded_file_name}'")
-            frappe.msgprint(f"Uploading file '{file_name}' to SharePoint folder '{target_folder_rel_path}'...")
+            # The file is uploaded *into* the folder represented by folder_id.
+            # The target_folder_rel_path variable holds the logical path used to get the folder_id.
+            frappe.msgprint(f"Uploading file '{file_name}' into SharePoint folder (Path used: '{target_folder_rel_path}', Target Item ID: '{folder_id}')...")
             response = requests.put(upload_url, headers=headers, data=file_content)
             response.raise_for_status() # Raise HTTPError for bad responses
             upload_result = response.json()

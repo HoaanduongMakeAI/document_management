@@ -5,69 +5,48 @@ import frappe
 from frappe.model.document import Document
 import requests
 
+# Import the new utility function
+from document_management.document_management.document_management.utils.sharepoint_integration import get_sharepoint_site_and_drive_ids_for_group
+
 @frappe.whitelist()
 def fetch_sharepoint_ids_from_group():
 	"""
 	Fetches SharePoint IDs for the singleton DocumentManagementSettings instance
+	using the centralized utility function.
 
 	Returns:
 		dict: Dictionary containing site_id and drive_id
 	"""
 	settings = frappe.get_single("Document Management Settings")
 
+	# Basic validation remains here
 	if not settings.connected_app:
 		frappe.throw("Please select a Connected App first in Document Management Settings")
 	if not settings.entra_group_id:
 		frappe.throw("Please enter the Microsoft Entra Group ID first in Document Management Settings")
 
 	try:
-		from document_management.document_management.utils.sharepoint_integration import get_headers
-		headers = get_headers()
+		# Call the utility function
+		site_id, drive_id = get_sharepoint_site_and_drive_ids_for_group(settings.entra_group_id)
 
-		# Get SharePoint site
-		site_url = f"https://graph.microsoft.com/v1.0/groups/{settings.entra_group_id}/sites/root"
-		site_response = requests.get(site_url, headers=headers)
-		site_response.raise_for_status()
-		site_data = site_response.json()
-		# frappe.msgprint(f"Site data: {site_data}")
-		site_id = site_data.get("id")
-		if not site_id:
-			frappe.throw("Could not retrieve Site ID from Group information")
+		# Update settings if IDs are successfully retrieved
+		if site_id and drive_id:
+			settings.sharepoint_site_id = site_id
+			settings.sharepoint_drive_id = drive_id
+			settings.save() # Save the singleton document
+			frappe.msgprint("Successfully fetched and updated SharePoint Site ID and Drive ID.", indicator="green")
+			return {
+				"sharepoint_site_id": site_id,
+				"sharepoint_drive_id": drive_id
+			}
+		else:
+			# This case should ideally be handled by exceptions in the utility function
+			frappe.throw("Failed to retrieve SharePoint IDs. The utility function returned empty values.")
 
-		# Get document library
-		drives_url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drives"
-		drives_response = requests.get(drives_url, headers=headers)
-		drives_response.raise_for_status()
-		drives_data = drives_response.json()
-		drive_id = None
-		if drives_data.get("value"):
-			for drive in drives_data["value"]:
-				if drive.get("name", "").lower() == "documents":
-					drive_id = drive.get("id")
-					break
-			if not drive_id:
-				drive_id = drives_data["value"][0].get("id")
-
-		if not drive_id:
-			frappe.throw("Could not retrieve Drive ID from Site information")
-
-		# Update settings
-		settings.sharepoint_site_id = site_id
-		settings.sharepoint_drive_id = drive_id
-		settings.save()
-		# frappe.db.commit()
-		return {
-			"sharepoint_site_id": site_id,
-			"sharepoint_drive_id": drive_id
-		}
-
-	except requests.exceptions.RequestException as e:
-		err_msg = e.response.text if e.response else str(e)
-		frappe.log_error(f"Graph API Error: {err_msg}")
-		frappe.throw(f"Error communicating with Microsoft Graph API: {err_msg}")
 	except Exception as e:
-		frappe.log_error(f"Error: {str(e)}")
-		frappe.throw(f"An unexpected error occurred: {str(e)}")
+		# Error logging and throwing are handled within get_sharepoint_site_and_drive_ids_for_group
+		# We re-throw here to ensure the client-side gets the error message
+		frappe.throw(f"Failed to fetch SharePoint IDs: {str(e)}")
 
 class DocumentManagementSettings(Document):
     @frappe.whitelist()

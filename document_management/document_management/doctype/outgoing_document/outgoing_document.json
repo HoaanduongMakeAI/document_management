@@ -13,6 +13,8 @@
   "recipient",
   "date_issued",
   "outgoing_number",
+  "folder_section",
+  "folder",
   "teams_link",
   "upload_to_sharepoint_btn",
   "document_attachment",
@@ -64,6 +66,18 @@
    "fieldname": "outgoing_number",
    "fieldtype": "Data",
    "label": "Outgoing Number"
+  },
+  {
+   "fieldname": "folder_section",
+   "fieldtype": "Section Break",
+   "label": "Storage Location"
+  },
+  {
+   "fieldname": "folder",
+   "fieldtype": "Link",
+   "label": "Folder",
+   "options": "Folder",
+   "description": "Select the SharePoint folder where this document's files should be stored. If empty, uses the default location from settings."
   },
   {
    "fieldname": "document_attachment",
