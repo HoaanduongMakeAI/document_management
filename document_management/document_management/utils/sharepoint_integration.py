@@ -150,12 +150,16 @@ def create_sharepoint_folder_if_not_exists(drive_id, folder_path):
     for segment in segments:
         if not segment: continue
         current_path = f"{current_path}/{segment}" if current_path else segment
-        encoded_segment = encode(segment)
+        # Use the raw segment name for filtering. Requests library handles basic URL encoding.
+        # Avoid frappe.utils.encode here as it seems to cause issues with the filter format.
+        segment_name_for_filter = segment
+
         # Graph API URL to get/create a folder within another item (parent)
         # Using item-id based addressing is more robust than path-based for creation
         # Use requests params for proper URL encoding
         folder_check_base_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{parent_item_id}/children"
-        params = {"$filter": f"name eq '{encoded_segment}'"}
+        # Use the raw segment string in the filter, ensuring it's properly quoted for OData
+        params = {"$filter": f"name eq '{segment_name_for_filter}'"}
 
         try:
             frappe.msgprint(f"Checking for SharePoint folder segment: '{segment}'...")
