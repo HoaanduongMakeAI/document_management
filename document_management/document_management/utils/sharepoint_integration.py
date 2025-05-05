@@ -171,7 +171,7 @@ def create_sharepoint_folder_if_not_exists(drive_id, folder_path):
             if data.get("value"): # Folder exists
                 parent_item_id = data["value"][0]["id"]
                 frappe.msgprint(f"SharePoint folder segment '{segment}' exists.")
-                # frappe.log_info(f"SharePoint folder segment '{segment}' exists with ID: {parent_item_id}") # Keep log for detailed ID if needed
+                # frappe.msgprint(f"SharePoint folder segment '{segment}' exists with ID: {parent_item_id}") # Keep log for detailed ID if needed
             else: # Folder does not exist, create it
                 frappe.msgprint(f"SharePoint folder segment '{segment}' not found. Creating...")
                 create_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{parent_item_id}/children"
@@ -185,7 +185,7 @@ def create_sharepoint_folder_if_not_exists(drive_id, folder_path):
                 new_folder_data = create_response.json()
                 parent_item_id = new_folder_data["id"]
                 frappe.msgprint(f"Created SharePoint folder segment '{segment}'.")
-                # frappe.log_info(f"Created SharePoint folder segment '{segment}' with ID: {parent_item_id}") # Keep log for detailed ID if needed
+                # frappe.msgprint(f"Created SharePoint folder segment '{segment}' with ID: {parent_item_id}") # Keep log for detailed ID if needed
 
         except requests.exceptions.RequestException as e:
             err_msg = e.response.text if e.response else str(e)
@@ -270,14 +270,14 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
             with open(file_path_abs, "rb") as f:
                 file_content = f.read()
 
-            # frappe.log_info(f"Attempting SharePoint small file upload to item ID '{folder_id}' with name '{encoded_file_name}'")
+            # frappe.msgprint(f"Attempting SharePoint small file upload to item ID '{folder_id}' with name '{encoded_file_name}'")
             frappe.msgprint(f"Uploading file '{file_name}' to SharePoint folder '{target_folder_rel_path}'...")
             response = requests.put(upload_url, headers=headers, data=file_content)
             response.raise_for_status() # Raise HTTPError for bad responses
             upload_result = response.json()
             frappe.msgprint(f"File '{file_name}' uploaded successfully.")
 
-        frappe.log_info(f"SharePoint upload response: {upload_result}")
+        frappe.msgprint(f"SharePoint upload response: {upload_result}")
 
         # --- Create Document Version Entry ---
         frappe.msgprint("Creating document version entry...")
@@ -305,7 +305,7 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
                 # file_doc.db_set("attached_to_doctype", None)
                 # file_doc.db_set("attached_to_name", None)
                 # frappe.delete_doc("File", file_doc.name, ignore_permissions=True, force=True) # Be very careful with force=True
-                # frappe.log_info(f"Removed local file '{file_path_abs}' after SharePoint upload for '{doc.name}'.")
+                # frappe.msgprint(f"Removed local file '{file_path_abs}' after SharePoint upload for '{doc.name}'.")
                 frappe.msgprint(f"Removed local file '{file_path_abs}'.")
                 # Update the child table entry's file_url after deletion
                 frappe.db.set_value("Document Version", new_version.name, "file_url", None)
@@ -315,7 +315,7 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
                 frappe.throw(f"Failed to delete local file '{file_path_abs}': {del_err}")
 
 
-        # frappe.log_info(f"Successfully uploaded '{file_name}' to SharePoint for document '{doc.name}'. Link: {sharepoint_link}")
+        # frappe.msgprint(f"Successfully uploaded '{file_name}' to SharePoint for document '{doc.name}'. Link: {sharepoint_link}")
         frappe.msgprint(f"Document version created. SharePoint Link: {sharepoint_link}")
         # Save the document to persist the new child table row
         doc.save(ignore_permissions=True) # Save needed to persist child table changes made via .append()
