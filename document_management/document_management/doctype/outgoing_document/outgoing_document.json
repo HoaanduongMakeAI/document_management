@@ -87,7 +87,7 @@
   },
   {
    "fieldname": "teams_link",
-   "fieldtype": "Data",
+   "fieldtype": "Text",
    "label": "MS Teams Link",
    "options": "URL",
    "read_only": 1
