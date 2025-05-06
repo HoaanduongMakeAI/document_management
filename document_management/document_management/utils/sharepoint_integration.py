@@ -4,6 +4,7 @@
 import frappe
 import requests
 import os
+import urllib.parse
 from frappe.utils import get_site_path, get_files_path, encode
 # Import the helper function to get settings
 from document_management.document_management.utils import get_settings # Updated import path
@@ -351,7 +352,7 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
 
         # --- Upload File ---
         frappe.msgprint(f"Target SharePoint folder confirmed (ID: {folder_id}). Preparing file upload...")
-        encoded_file_name = encode(file_name)
+        encoded_file_name = urllib.parse.quote(file_name, safe='')
         # Use item ID for parent folder reference - more reliable than path
         upload_url_base = f"https://graph.microsoft.com/v1.0/drives/{sharepoint_drive_id}/items/{folder_id}:/{encoded_file_name}:"
 
