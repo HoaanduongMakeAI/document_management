@@ -6,7 +6,9 @@
  "engine": "InnoDB",
  "field_order": [
   "folder_path",
-  "microsoft_entra_group"
+  "microsoft_entra_group",
+  "sharepoint_contents_tab",
+  "sharepoint_contents_html"
  ],
  "fields": [
   {
@@ -14,7 +16,6 @@
    "fieldtype": "Data",
    "label": "Folder Path",
    "reqd": 1,
-   "unique": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "in_global_search": 1,
@@ -28,6 +29,16 @@
    "reqd": 1,
    "in_list_view": 1,
    "description": "The Microsoft Entra Group (and associated SharePoint site/drive) this folder belongs to."
+  },
+  {
+   "fieldname": "sharepoint_contents_tab",
+   "fieldtype": "Tab Break",
+   "label": "SharePoint Contents"
+  },
+  {
+   "fieldname": "sharepoint_contents_html",
+   "fieldtype": "HTML",
+   "label": "Contents"
   }
  ],
  "index_web_pages_for_search": 1,
