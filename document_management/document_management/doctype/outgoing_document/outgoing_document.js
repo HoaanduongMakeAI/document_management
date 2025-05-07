@@ -69,7 +69,7 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
                         }
 
                         dialog.get_field('file_to_upload').toggle(true);
-                        this.toggle(false); // Hide self
+                        dialog.get_field('unlink_button').toggle(false); // Correctly hide the button
                         update_path_display();
                     }
                 },
@@ -77,7 +77,12 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
                     fieldname: 'file_to_upload',
                     fieldtype: 'Attach',
                     label: __('Upload New File (Optional)'),
-                    description: __('If you want to upload a new file to the selected path/folder.')
+                    description: __('If you want to upload a new file to the selected path/folder.'),
+                    onchange: function() {
+                        // When a file is selected or cleared in the attach field, update the display
+                        // This will ensure the "unlink" button visibility and messages are correct.
+                        update_path_display();
+                    }
                 }
             ],
             primary_action_label: __('Process Selection'),
