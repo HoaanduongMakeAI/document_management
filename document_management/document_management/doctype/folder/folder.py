@@ -12,32 +12,37 @@ class Folder(Document):
         Sets the name of the Folder document based on the linked Microsoft Entra Group name and folder path.
         Format: (<Group Name>)<Folder Path>
         """
-        if self.microsoft_entra_group and self.folder_path:
+        # Store the original folder_path
+        original_folder_path = self.folder_path
+
+        if self.microsoft_entra_group and original_folder_path:
             try:
                 # Fetch the linked Microsoft Entra Group document
                 group_doc = frappe.get_doc("Microsoft Entra Group", self.microsoft_entra_group)
                 group_name = group_doc.group_name if group_doc.group_name else "Unnamed Group"
                 
                 # Ensure folder_path starts with a '/' for consistent formatting
-                formatted_folder_path = self.folder_path if self.folder_path.startswith('/') else '/' + self.folder_path
+                formatted_folder_path = original_folder_path if original_folder_path.startswith('/') else '/' + original_folder_path
 
                 # Construct the new name
                 self.name = f"({group_name}){formatted_folder_path}"
                 frappe.msgprint(f"Setting Folder name to: {self.name}", indicator="blue")
 
             except frappe.DoesNotExistError:
-                frappe.log_error(f"Linked Microsoft Entra Group '{self.microsoft_entra_group}' not found for Folder '{self.folder_path}'. Using default naming.", "Folder Naming Error")
+                frappe.log_error(f"Linked Microsoft Entra Group '{self.microsoft_entra_group}' not found for Folder '{original_folder_path}'. Using default naming.", "Folder Naming Error")
                 # Fallback to default naming if group doc is not found
-                self.name = self.folder_path # Assuming default naming is based on folder_path
+                self.name = original_folder_path
             except Exception as e:
-                frappe.log_error(f"Error setting Folder name for path '{self.folder_path}': {frappe.get_traceback()}", "Folder Naming Error")
+                frappe.log_error(f"Error setting Folder name for path '{original_folder_path}': {frappe.get_traceback()}", "Folder Naming Error")
                 # Fallback to default naming on other errors
-                self.name = self.folder_path # Assuming default naming is based on folder_path
-        elif self.folder_path:
+                self.name = original_folder_path
+        elif original_folder_path:
              # If no group is linked, use just the folder path as the name
-             self.name = self.folder_path
-        # If neither is set, Frappe's default naming (if any) will apply or it might throw an error if naming_rule is 'By fieldname' and the field is empty.
-        # Assuming folder_path is required, this else case might not be strictly necessary if naming_rule is 'By fieldname' on folder_path.
+             self.name = original_folder_path
+        
+        # Ensure folder_path is not overwritten by the naming process
+        if original_folder_path and self.folder_path != original_folder_path:
+            self.folder_path = original_folder_path
 
 
     # This method is called after the document is saved (created or updated)

@@ -16,7 +16,9 @@
    "reqd": 1,
    "unique": 1,
    "in_list_view": 1,
-   "description": "Relative path of the folder in SharePoint (e.g., 'Department/SubFolder'). This will be the document name."
+   "in_standard_filter": 1,
+   "in_global_search": 1,
+   "description": "Relative path of the folder in SharePoint (e.g., 'Department/SubFolder'). This will be used to generate the document name."
   },
   {
    "fieldname": "microsoft_entra_group",
