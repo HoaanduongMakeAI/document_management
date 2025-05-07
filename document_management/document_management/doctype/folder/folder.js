@@ -1,18 +1,17 @@
 frappe.ui.form.on('Folder', {
     refresh: function(frm) {
         // Initialize current_sharepoint_path relative to the Folder doctype's path
-        let current_sharepoint_path = frm.doc.folder_path || '/';
+        let current_sharepoint_path = '/'; // Path relative to frm.doc.folder_path
         let current_folder_docname = frm.doc.name; // The Folder doctype's name is the base
 
         // Add a "Back" button above the HTML field
         if (!frm.custom_back_button_added) {
             frm.add_custom_button(__('Back to Parent Folder'), function() {
-                if (current_sharepoint_path && current_sharepoint_path !== frm.doc.folder_path) {
+                if (current_sharepoint_path && current_sharepoint_path !== '/') {
                     let parts = current_sharepoint_path.split('/').filter(p => p.trim() !== '');
                     parts.pop(); // Go up one level
                     current_sharepoint_path = '/' + parts.join('/');
-                    if (current_sharepoint_path === '//') current_sharepoint_path = '/';
-                    if (current_sharepoint_path === '/') current_sharepoint_path = frm.doc.folder_path; // Go back to the Folder doctype's root path
+                    if (current_sharepoint_path === '//') current_sharepoint_path = '/'; // Normalize if it became just '//'
                     update_sharepoint_contents_display();
                 }
             }, __('SharePoint Contents'));
@@ -38,7 +37,19 @@ frappe.ui.form.on('Folder', {
                 frm.get_field('sharepoint_contents_tab').toggle(true); // Ensure tab is visible
             }
 
-            let display_path = current_sharepoint_path === frm.doc.folder_path ? frm.doc.folder_path : `${frm.doc.folder_path}${current_sharepoint_path.substring(frm.doc.folder_path.length)}`;
+            let base_dp = frm.doc.folder_path || "";
+            let rel_dp = current_sharepoint_path;
+            let display_path;
+            if (rel_dp === '/') {
+                display_path = base_dp || '/';
+            } else {
+                display_path = base_dp.replace(/\/$/, '') + '/' + rel_dp.replace(/^\//, '');
+            }
+            if (display_path.startsWith('//')) { // Normalize if base_dp was '/'
+                display_path = display_path.substring(1);
+            }
+            if (display_path === "") display_path = "/";
+
 
             if (frm.fields_dict['sharepoint_contents_html']) {
                 frm.fields_dict['sharepoint_contents_html'].$wrapper.html(`<div class="text-muted"><i class="fa fa-spinner fa-spin"></i> ${__('Loading contents for:')} <strong>${display_path}</strong></div>`);
@@ -118,9 +129,17 @@ frappe.ui.form.on('Folder', {
                                         {
                                             label: __('Create Incoming Document'),
                                             handler: function() {
+                                                let base_nd = frm.doc.folder_path || "";
+                                                let rel_nd = clicked_item_path; // e.g., "/Subfolder/file.txt"
+                                                let absolute_path_for_new_doc;
+                                                if (rel_nd === '/') { absolute_path_for_new_doc = base_nd || '/'; }
+                                                else { absolute_path_for_new_doc = base_nd.replace(/\/$/, '') + '/' + rel_nd.replace(/^\//, ''); }
+                                                if (absolute_path_for_new_doc.startsWith('//')) { absolute_path_for_new_doc = absolute_path_for_new_doc.substring(1); }
+                                                if (absolute_path_for_new_doc === "") absolute_path_for_new_doc = "/";
+
                                                 frappe.new_doc('Incoming Document', {
                                                     folder: frm.doc.name, // Link to this Folder doctype
-                                                    path: clicked_item_path, // Set the SharePoint path
+                                                    path: absolute_path_for_new_doc, // Set the SharePoint path
                                                     // You might want to pre-fill other fields if possible, e.g., subject from item_name
                                                 });
                                             }
@@ -128,9 +147,17 @@ frappe.ui.form.on('Folder', {
                                         {
                                             label: __('Create Outgoing Document'),
                                             handler: function() {
+                                                let base_nd = frm.doc.folder_path || "";
+                                                let rel_nd = clicked_item_path; // e.g., "/Subfolder/file.txt"
+                                                let absolute_path_for_new_doc;
+                                                if (rel_nd === '/') { absolute_path_for_new_doc = base_nd || '/'; }
+                                                else { absolute_path_for_new_doc = base_nd.replace(/\/$/, '') + '/' + rel_nd.replace(/^\//, ''); }
+                                                if (absolute_path_for_new_doc.startsWith('//')) { absolute_path_for_new_doc = absolute_path_for_new_doc.substring(1); }
+                                                if (absolute_path_for_new_doc === "") absolute_path_for_new_doc = "/";
+
                                                  frappe.new_doc('Outgoing Document', {
                                                     folder: frm.doc.name, // Link to this Folder doctype
-                                                    path: clicked_item_path, // Set the SharePoint path
+                                                    path: absolute_path_for_new_doc, // Set the SharePoint path
                                                     // You might want to pre-fill other fields if possible, e.g., subject from item_name
                                                 });
                                             }
