@@ -10,6 +10,7 @@ frappe.ui.form.on('Document Management Settings', {
                         indicator: 'green'
                     });
                     frm.refresh();
+                    frm.reload_doc();
                 }
             },
             freeze: true,

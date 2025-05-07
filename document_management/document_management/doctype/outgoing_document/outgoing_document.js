@@ -43,6 +43,7 @@ frappe.ui.form.on('Outgoing Document', {
                                                 frm.set_value('teams_link', r.message.sharepoint_link);
                                                 frappe.show_alert({ message: __('File successfully uploaded and linked.'), indicator: 'green' });
                                                 frm.save(); // Optionally save the form after successful upload
+                                                frm.reload_doc();
                                             } else if (r.message && r.message.error) {
                                                 frappe.msgprint({
                                                     title: __('SharePoint Upload Error'),

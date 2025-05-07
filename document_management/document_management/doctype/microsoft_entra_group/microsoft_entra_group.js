@@ -28,6 +28,7 @@ frappe.ui.form.on('Microsoft Entra Group', {
                     frm.set_value('sharepoint_site_id', r.message.sharepoint_site_id);
                     frm.set_value('sharepoint_drive_id', r.message.sharepoint_drive_id);
                     frappe.msgprint(__('IDs and Group Name fetched successfully.'));
+                    frm.reload_doc();
                 } else {
                     frappe.msgprint(__('Failed to fetch IDs and Group Name.'));
                 }
