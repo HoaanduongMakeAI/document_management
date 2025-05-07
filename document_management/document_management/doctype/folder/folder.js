@@ -95,75 +95,83 @@ frappe.ui.form.on('Folder', {
                                 update_sharepoint_contents_display(); // Navigate into folder
                             } else {
                                 // File actions
-                                let file_actions = [
-                                    {
-                                        label: __('Open File Link'),
-                                        action: function() { // Renamed from handler for clarity, frappe.confirm uses 'action'
-                                            frappe.call({
-                                                method: 'document_management.document_management.utils.sharepoint_integration.get_sharepoint_item_details',
-                                                args: {
-                                                    target_folder_docname: current_folder_docname,
-                                                    relative_path_to_item: clicked_item_path
-                                                },
-                                                callback: function(r_item) {
-                                                    if (r_item.message && r_item.message.is_file && r_item.message.sharepoint_link) {
-                                                        window.open(r_item.message.sharepoint_link, '_blank');
-                                                    } else if (r_item.message && r_item.message.error) {
-                                                        frappe.msgprint({ title: __('Error'), indicator: 'red', message: r_item.message.error });
-                                                    } else if (r_item.exc) {
-                                                        frappe.msgprint({ title: __('Server Error'), indicator: 'red', message: __('Error fetching file link. Check server logs.')});
-                                                        console.error("Get Item Link Error:", r_item.exc);
-                                                    } else {
-                                                        frappe.msgprint(__('File link not available or item is not a file.'));
-                                                    }
-                                                },
-                                                error: function(err_item) {
-                                                    frappe.msgprint({ title: __('Network Error'), indicator: 'red', message: __('Failed to communicate for file link.')});
-                                                    console.error("AJAX Error (Get Item Link):", err_item);
-                                                }
-                                            });
+                                const file_action_dialog = new frappe.ui.Dialog({
+                                    title: __("Actions for file: {0}", [clicked_item_name]),
+                                    fields: [
+                                        // This dialog will primarily use buttons for actions.
+                                        // A small HTML field could be added here if more info about the file is needed.
+                                        {
+                                            fieldname: 'info',
+                                            fieldtype: 'HTML',
+                                            options: `<p>${__('Selected file:')} <strong>${clicked_item_name}</strong></p><p class="text-muted small">${clicked_item_path}</p>`
                                         }
-                                    },
-                                    {
-                                        label: __('Create Incoming Document'),
-                                        action: function() {
-                                            let base_nd = frm.doc.folder_path || "";
-                                            let rel_nd = clicked_item_path;
-                                            let absolute_path_for_new_doc;
-                                            if (rel_nd === '/') { absolute_path_for_new_doc = base_nd || '/'; }
-                                            else { absolute_path_for_new_doc = base_nd.replace(/\/$/, '') + '/' + rel_nd.replace(/^\//, ''); }
-                                            if (absolute_path_for_new_doc.startsWith('//')) { absolute_path_for_new_doc = absolute_path_for_new_doc.substring(1); }
-                                            if (absolute_path_for_new_doc === "") absolute_path_for_new_doc = "/";
+                                    ],
+                                    // Primary action can be "Close" or removed if all actions are buttons
+                                    // primary_action_label: __('Close'),
+                                    // primary_action: () => {
+                                    //     file_action_dialog.hide();
+                                    // }
+                                });
 
-                                            frappe.new_doc('Incoming Document', {
-                                                folder: frm.doc.name,
-                                                path: absolute_path_for_new_doc,
-                                            });
+                                file_action_dialog.add_custom_button(__('Open File Link'), () => {
+                                    frappe.call({
+                                        method: 'document_management.document_management.utils.sharepoint_integration.get_sharepoint_item_details',
+                                        args: {
+                                            target_folder_docname: current_folder_docname,
+                                            relative_path_to_item: clicked_item_path
+                                        },
+                                        callback: function(r_item) {
+                                            if (r_item.message && r_item.message.is_file && r_item.message.sharepoint_link) {
+                                                window.open(r_item.message.sharepoint_link, '_blank');
+                                            } else if (r_item.message && r_item.message.error) {
+                                                frappe.msgprint({ title: __('Error'), indicator: 'red', message: r_item.message.error });
+                                            } else if (r_item.exc) {
+                                                frappe.msgprint({ title: __('Server Error'), indicator: 'red', message: __('Error fetching file link. Check server logs.')});
+                                                console.error("Get Item Link Error:", r_item.exc);
+                                            } else {
+                                                frappe.msgprint(__('File link not available or item is not a file.'));
+                                            }
+                                        },
+                                        error: function(err_item) {
+                                            frappe.msgprint({ title: __('Network Error'), indicator: 'red', message: __('Failed to communicate for file link.')});
+                                            console.error("AJAX Error (Get Item Link):", err_item);
                                         }
-                                    },
-                                    {
-                                        label: __('Create Outgoing Document'),
-                                        action: function() {
-                                            let base_nd = frm.doc.folder_path || "";
-                                            let rel_nd = clicked_item_path;
-                                            let absolute_path_for_new_doc;
-                                            if (rel_nd === '/') { absolute_path_for_new_doc = base_nd || '/'; }
-                                            else { absolute_path_for_new_doc = base_nd.replace(/\/$/, '') + '/' + rel_nd.replace(/^\//, ''); }
-                                            if (absolute_path_for_new_doc.startsWith('//')) { absolute_path_for_new_doc = absolute_path_for_new_doc.substring(1); }
-                                            if (absolute_path_for_new_doc === "") absolute_path_for_new_doc = "/";
+                                    });
+                                    file_action_dialog.hide();
+                                });
 
-                                             frappe.new_doc('Outgoing Document', {
-                                                folder: frm.doc.name,
-                                                path: absolute_path_for_new_doc,
-                                            });
-                                        }
-                                    }
-                                ];
-                                frappe.confirm(
-                                    __("Choose an action for file '{0}':", [clicked_item_name]),
-                                    file_actions, // Pass the array of action objects
-                                    __('File Actions') // This is the title for the confirm dialog
-                                );
+                                file_action_dialog.add_custom_button(__('Create Incoming Document'), () => {
+                                    let base_nd = frm.doc.folder_path || "";
+                                    let rel_nd = clicked_item_path;
+                                    let absolute_path_for_new_doc;
+                                    if (rel_nd === '/') { absolute_path_for_new_doc = base_nd || '/'; }
+                                    else { absolute_path_for_new_doc = base_nd.replace(/\/$/, '') + '/' + rel_nd.replace(/^\//, ''); }
+                                    if (absolute_path_for_new_doc.startsWith('//')) { absolute_path_for_new_doc = absolute_path_for_new_doc.substring(1); }
+                                    if (absolute_path_for_new_doc === "") absolute_path_for_new_doc = "/";
+
+                                    frappe.new_doc('Incoming Document', {
+                                        folder: frm.doc.name,
+                                        path: absolute_path_for_new_doc,
+                                    });
+                                    file_action_dialog.hide();
+                                });
+
+                                file_action_dialog.add_custom_button(__('Create Outgoing Document'), () => {
+                                    let base_nd = frm.doc.folder_path || "";
+                                    let rel_nd = clicked_item_path;
+                                    let absolute_path_for_new_doc;
+                                    if (rel_nd === '/') { absolute_path_for_new_doc = base_nd || '/'; }
+                                    else { absolute_path_for_new_doc = base_nd.replace(/\/$/, '') + '/' + rel_nd.replace(/^\//, ''); }
+                                    if (absolute_path_for_new_doc.startsWith('//')) { absolute_path_for_new_doc = absolute_path_for_new_doc.substring(1); }
+                                    if (absolute_path_for_new_doc === "") absolute_path_for_new_doc = "/";
+
+                                     frappe.new_doc('Outgoing Document', {
+                                        folder: frm.doc.name,
+                                        path: absolute_path_for_new_doc,
+                                    });
+                                    file_action_dialog.hide();
+                                });
+                                file_action_dialog.show();
                             }
                         });
                     } else if (r.message && r.message.error) {
