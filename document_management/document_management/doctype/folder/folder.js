@@ -24,11 +24,17 @@ frappe.ui.form.on('Folder', {
         function update_sharepoint_contents_display() {
             if (!current_folder_docname) {
                  frm.set_html('sharepoint_contents_html', '<div class="text-muted">' + __('Please save the Folder document first.') + '</div>');
-                 frm.get_field('sharepoint_contents_tab').toggle(false); // Hide tab if not saved
+                 // Check if the field exists before toggling
+                 if (frm.get_field('sharepoint_contents_tab')) {
+                     frm.get_field('sharepoint_contents_tab').toggle(false); // Hide tab if not saved
+                 }
                  return;
             }
 
-            frm.get_field('sharepoint_contents_tab').toggle(true); // Ensure tab is visible
+            // Check if the field exists before toggling
+            if (frm.get_field('sharepoint_contents_tab')) {
+                frm.get_field('sharepoint_contents_tab').toggle(true); // Ensure tab is visible
+            }
 
             let display_path = current_sharepoint_path === frm.doc.folder_path ? frm.doc.folder_path : `${frm.doc.folder_path}${current_sharepoint_path.substring(frm.doc.folder_path.length)}`;
 
