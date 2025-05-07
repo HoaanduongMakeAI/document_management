@@ -3,11 +3,16 @@
 
 frappe.ui.form.on('Microsoft Entra Group', {
     refresh: function(frm) {
-        // The 'fetch_ids' button (defined in JSON) will be handled by the event below
+        if (frm.is_new()) return;
+
+        // Add the custom button (dynamic)
+        frm.add_custom_button(__('Fetch IDs'), function() {
+            frm.trigger('fetch_ids');
+        });
     },
 
     fetch_ids: function(frm) {
-        // This function will be called when the 'Fetch IDs' button (from JSON) is clicked
+        // This function will be called when the 'Fetch IDs' button is clicked
         if (!frm.doc.microsoft_entra_group_id) {
             frappe.msgprint(__('Please enter the Microsoft Entra (Azure AD) Group ID first.'));
             return;
