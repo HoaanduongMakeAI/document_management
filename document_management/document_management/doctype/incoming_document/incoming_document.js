@@ -144,7 +144,7 @@ frappe.ui.form.on('Incoming Document', {
                         method: 'document_management.document_management.utils.sharepoint_integration.get_sharepoint_item_details',
                         args: {
                             target_folder_docname: target_folder_docname_for_action,
-                            relative_path: selected_item_for_linking.path // Path is relative to Folder DocType root
+                            relative_path_to_item: selected_item_for_linking.path // Path is relative to Folder DocType root
                         },
                         callback: function(r_item) {
                             if (r_item.message && r_item.message.is_file && r_item.message.sharepoint_link && r_item.message.absolute_path) {
