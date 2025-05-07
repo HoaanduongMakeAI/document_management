@@ -3,6 +3,7 @@
 
 import frappe
 from frappe.model.document import Document
+import copy # Import the copy module
 # Corrected import path
 from document_management.document_management.utils.sharepoint_integration import create_sharepoint_folder_if_not_exists
 
@@ -12,8 +13,8 @@ class Folder(Document):
         Sets the name of the Folder document based on the linked Microsoft Entra Group name and folder path.
         Format: (<Group Name>)<Folder Path>
         """
-        # Store the original folder_path
-        original_folder_path = self.folder_path
+        # Store a deep copy of the original folder_path
+        original_folder_path = copy.deepcopy(self.folder_path)
 
         if self.microsoft_entra_group and original_folder_path:
             try:
