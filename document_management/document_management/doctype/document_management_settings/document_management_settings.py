@@ -6,7 +6,7 @@ from frappe.model.document import Document
 import requests
 
 # Import the new utility function (Corrected Path)
-from document_management.document_management.utils.sharepoint_integration import get_sharepoint_site_and_drive_ids_for_group
+from document_management.document_management.utils.sharepoint_integration import get_group_details_and_sharepoint_ids
 
 @frappe.whitelist()
 def fetch_sharepoint_ids_from_group():
@@ -26,8 +26,8 @@ def fetch_sharepoint_ids_from_group():
 		frappe.throw("Please enter the Microsoft Entra Group ID first in Document Management Settings")
 
 	try:
-		# Call the utility function
-		site_id, drive_id = get_sharepoint_site_and_drive_ids_for_group(settings.entra_group_id)
+		# Call the utility function - it now returns group_name, site_id, drive_id
+		group_name, site_id, drive_id = get_group_details_and_sharepoint_ids(settings.entra_group_id)
 
 		# Update settings if IDs are successfully retrieved
 		if site_id and drive_id:
@@ -44,7 +44,7 @@ def fetch_sharepoint_ids_from_group():
 			frappe.throw("Failed to retrieve SharePoint IDs. The utility function returned empty values.")
 
 	except Exception as e:
-		# Error logging and throwing are handled within get_sharepoint_site_and_drive_ids_for_group
+		# Error logging and throwing are handled within get_group_details_and_sharepoint_ids
 		# We re-throw here to ensure the client-side gets the error message
 		frappe.throw(f"Failed to fetch SharePoint IDs: {str(e)}")
 

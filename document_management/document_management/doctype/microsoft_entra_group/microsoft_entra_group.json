@@ -1,11 +1,19 @@
 {
- "actions": [],
+ "actions": [
+  {
+   "label": "Fetch IDs",
+   "name": "fetch_ids",
+   "click": "fetch_ids",
+   "type": "Action"
+  }
+ ],
  "allow_rename": 1,
  "creation": "2025-05-05 22:35:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "microsoft_entra_group_id",
+  "group_name",
   "sharepoint_site_id",
   "sharepoint_drive_id"
  ],
@@ -17,6 +25,12 @@
    "reqd": 1,
    "unique": 1,
    "in_list_view": 1
+  },
+  {
+   "fieldname": "group_name",
+   "fieldtype": "Data",
+   "label": "Group Name",
+   "read_only": 1
   },
   {
    "fieldname": "sharepoint_site_id",

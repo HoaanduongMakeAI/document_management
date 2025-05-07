@@ -7,6 +7,39 @@ from frappe.model.document import Document
 from document_management.document_management.utils.sharepoint_integration import create_sharepoint_folder_if_not_exists
 
 class Folder(Document):
+    def autoname(self):
+        """
+        Sets the name of the Folder document based on the linked Microsoft Entra Group name and folder path.
+        Format: (<Group Name>)<Folder Path>
+        """
+        if self.microsoft_entra_group and self.folder_path:
+            try:
+                # Fetch the linked Microsoft Entra Group document
+                group_doc = frappe.get_doc("Microsoft Entra Group", self.microsoft_entra_group)
+                group_name = group_doc.group_name if group_doc.group_name else "Unnamed Group"
+                
+                # Ensure folder_path starts with a '/' for consistent formatting
+                formatted_folder_path = self.folder_path if self.folder_path.startswith('/') else '/' + self.folder_path
+
+                # Construct the new name
+                self.name = f"({group_name}){formatted_folder_path}"
+                frappe.msgprint(f"Setting Folder name to: {self.name}", indicator="blue")
+
+            except frappe.DoesNotExistError:
+                frappe.log_error(f"Linked Microsoft Entra Group '{self.microsoft_entra_group}' not found for Folder '{self.folder_path}'. Using default naming.", "Folder Naming Error")
+                # Fallback to default naming if group doc is not found
+                self.name = self.folder_path # Assuming default naming is based on folder_path
+            except Exception as e:
+                frappe.log_error(f"Error setting Folder name for path '{self.folder_path}': {frappe.get_traceback()}", "Folder Naming Error")
+                # Fallback to default naming on other errors
+                self.name = self.folder_path # Assuming default naming is based on folder_path
+        elif self.folder_path:
+             # If no group is linked, use just the folder path as the name
+             self.name = self.folder_path
+        # If neither is set, Frappe's default naming (if any) will apply or it might throw an error if naming_rule is 'By fieldname' and the field is empty.
+        # Assuming folder_path is required, this else case might not be strictly necessary if naming_rule is 'By fieldname' on folder_path.
+
+
     # This method is called after the document is saved (created or updated)
     def on_update(self):
         self.ensure_sharepoint_folder_exists()
@@ -34,7 +67,7 @@ class Folder(Document):
                 frappe.throw(f"SharePoint Drive ID not found in the linked Microsoft Entra Group '{self.microsoft_entra_group}'. Cannot create folder.")
 
             # Use the folder_path directly, the utility function handles splitting by '/'
-            folder_path_to_create = self.folder_path 
+            folder_path_to_create = self.folder_path
 
             frappe.msgprint(f"Ensuring SharePoint folder exists for path: '{folder_path_to_create}' in Drive ID: {sharepoint_drive_id}")
 

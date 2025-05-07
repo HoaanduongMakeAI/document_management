@@ -130,18 +130,18 @@ def get_headers():
     token = get_access_token()
     return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
-def get_sharepoint_site_and_drive_ids_for_group(group_id):
+def get_group_details_and_sharepoint_ids(group_id):
     """
-    Fetches the SharePoint Site ID and the default Document Library Drive ID for a given Microsoft Entra Group ID.
+    Fetches the Microsoft Entra Group Name, SharePoint Site ID, and the default Document Library Drive ID for a given Microsoft Entra Group ID.
 
     Args:
         group_id (str): The ID of the Microsoft Entra Group.
 
     Returns:
-        tuple: (site_id, drive_id) or raises an exception on failure.
+        tuple: (group_name, site_id, drive_id) or raises an exception on failure.
     """
     if not group_id:
-        frappe.throw("Microsoft Entra Group ID is required to fetch SharePoint IDs.")
+        frappe.throw("Microsoft Entra Group ID is required to fetch details.")
 
     # Ensure Connected App is configured (needed for get_headers)
     settings = get_sharepoint_settings() # This checks for connected_app implicitly
@@ -149,6 +149,21 @@ def get_sharepoint_site_and_drive_ids_for_group(group_id):
     headers = get_headers() # Fetches token using settings.connected_app
 
     try:
+        # Get Group Details (including name)
+        group_url = f"https://graph.microsoft.com/v1.0/groups/{group_id}"
+        frappe.msgprint(f"Fetching group details from: {group_url}")
+        group_response = requests.get(group_url, headers=headers)
+        group_response.raise_for_status() # Check for HTTP errors
+        group_data = group_response.json()
+        group_name = group_data.get("displayName")
+        if not group_name:
+             # Log a warning if display name is missing but don't necessarily fail
+             frappe.log_warning(f"Group display name not found for Group ID: {group_id}. Response: {group_data}", "SharePoint Integration Warning")
+             group_name = "N/A" # Set a default or indicate it was not found
+
+        frappe.msgprint(f"Found Group Name: {group_name}")
+
+
         # Get SharePoint site associated with the group
         site_url = f"https://graph.microsoft.com/v1.0/groups/{group_id}/sites/root"
         frappe.msgprint(f"Fetching site info from: {site_url}")
@@ -182,15 +197,15 @@ def get_sharepoint_site_and_drive_ids_for_group(group_id):
         if not drive_id:
             frappe.throw(f"Could not retrieve any Drive ID for Site ID: {site_id}. Response: {drives_data}")
 
-        return site_id, drive_id
+        return group_name, site_id, drive_id
 
     except requests.exceptions.RequestException as e:
         err_msg = e.response.text if e.response else str(e)
-        frappe.log_error(f"Graph API Error fetching IDs for group {group_id}: {err_msg}", "SharePoint Integration Error")
-        frappe.throw(f"Error communicating with Microsoft Graph API while fetching IDs for group {group_id}: {err_msg}")
+        frappe.log_error(f"Graph API Error fetching details for group {group_id}: {err_msg}", "SharePoint Integration Error")
+        frappe.throw(f"Error communicating with Microsoft Graph API while fetching details for group {group_id}: {err_msg}")
     except Exception as e:
-        frappe.log_error(f"Unexpected error fetching IDs for group {group_id}: {frappe.get_traceback()}", "SharePoint Integration Error")
-        frappe.throw(f"An unexpected error occurred while fetching SharePoint IDs for group {group_id}: {str(e)}")
+        frappe.log_error(f"Unexpected error fetching details for group {group_id}: {frappe.get_traceback()}", "SharePoint Integration Error")
+        frappe.throw(f"An unexpected error occurred while fetching SharePoint details for group {group_id}: {str(e)}")
 def create_sharepoint_folder_if_not_exists(drive_id, folder_path):
     """
     Checks if a folder exists at the specified path within a drive, creates it if not.
