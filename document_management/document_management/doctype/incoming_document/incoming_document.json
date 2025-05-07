@@ -14,6 +14,7 @@
   "incoming_number",
   "folder_section",
   "folder",
+  "path",
   "teams_link",
   "upload_to_sharepoint_btn",
   "document_attachment",
@@ -74,9 +75,18 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "in_global_search": 1,
-   "description": "Select the SharePoint folder where this document's files should be stored. If empty, uses the default location from settings."
+   "description": "Select the SharePoint folder where this document's files should be stored. If empty, uses the default location from settings.",
+   "read_only": 1
   },
-   {
+  {
+   "fieldname": "path",
+   "fieldtype": "Data",
+   "label": "Path",
+   "read_only": 1,
+   "insert_after": "folder",
+   "description": "The full path to the file in SharePoint after upload."
+  },
+  {
     "fieldname": "document_attachment",
     "fieldtype": "Attach",
     "label": "Attach Document",

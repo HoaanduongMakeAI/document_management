@@ -453,6 +453,300 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
         frappe.throw(f"An unexpected error occurred during SharePoint upload: {e}")
         return None
 
+@frappe.whitelist()
+def list_sharepoint_folder_contents(folder_docname, relative_path="/"):
+    """
+    Lists files and folders within a given relative path of a SharePoint folder
+    defined by a 'Folder' DocType.
+
+    :param folder_docname: The name of the 'Folder' DocType record.
+    :param relative_path: The relative path within the SharePoint folder (e.g., "/", "/SubfolderA").
+    :return: dict with "items": list of {"name": str, "path": str, "is_folder": bool} or {"error": str}
+    """
+    if not folder_docname:
+        return {"error": "Folder DocType name is required."}
+
+    try:
+        folder_doc = frappe.get_doc("Folder", folder_docname)
+        if not folder_doc.microsoft_entra_group:
+            return {"error": f"Folder '{folder_docname}' does not have a Microsoft Entra Group linked."}
+        
+        group_doc = frappe.get_doc("Microsoft Entra Group", folder_doc.microsoft_entra_group)
+        if not group_doc.sharepoint_drive_id:
+            return {"error": f"Linked Microsoft Entra Group '{folder_doc.microsoft_entra_group}' for Folder '{folder_docname}' is missing its SharePoint Drive ID."}
+
+        drive_id = group_doc.sharepoint_drive_id
+        # Base path from Folder doctype, ensure it's clean and doesn't start/end with / for joining
+        base_sp_path_from_folder_doc = (folder_doc.folder_path or "").strip("/")
+
+        # Clean the relative_path input
+        clean_relative_path = relative_path.strip("/")
+
+        # Construct the full path for the API call
+        # If base_sp_path_from_folder_doc is empty, path_for_api is just clean_relative_path
+        # If clean_relative_path is empty (i.e. root of relative_path), path_for_api is base_sp_path_from_folder_doc
+        # Otherwise, join them.
+        if base_sp_path_from_folder_doc and clean_relative_path:
+            path_for_api = f"{base_sp_path_from_folder_doc}/{clean_relative_path}"
+        elif base_sp_path_from_folder_doc:
+            path_for_api = base_sp_path_from_folder_doc
+        elif clean_relative_path:
+            path_for_api = clean_relative_path
+        else: # Both are empty or "/", target the root of the drive
+            path_for_api = ""
+
+
+        headers = get_headers()
+        items = []
+
+        if not path_for_api: # Root of the drive
+            graph_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root/children"
+        else:
+            encoded_path = urllib.parse.quote(path_for_api)
+            graph_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root:/{encoded_path}:/children"
+
+        response = requests.get(graph_url, headers=headers)
+        response.raise_for_status()
+        children = response.json().get("value", [])
+
+        for item in children:
+            item_name = item.get("name")
+            # The path we return should be relative to the Folder doctype's root,
+            # so it's essentially the 'clean_relative_path' + item_name
+            item_relative_path = f"/{clean_relative_path}/{item_name}".replace("//", "/") if clean_relative_path else f"/{item_name}"
+            
+            items.append({
+                "name": item_name,
+                "path": item_relative_path, # This path is relative to the Folder DocType's root + initial relative_path
+                "is_folder": "folder" in item
+            })
+        return {"items": items}
+
+    except requests.exceptions.RequestException as e:
+        err_msg = e.response.text if e.response else str(e)
+        frappe.log_error(f"Graph API error listing contents for {folder_docname} at '{relative_path}': {err_msg}", "SharePoint List Contents Error")
+        return {"error": f"API Error: {err_msg}"}
+    except frappe.DoesNotExistError as e:
+        frappe.log_error(f"DoesNotExistError for {folder_docname}: {e}", "SharePoint List Contents Error")
+        return {"error": str(e)}
+    except Exception as e:
+        frappe.log_error(f"Error listing SharePoint contents for {folder_docname} at '{relative_path}': {frappe.get_traceback()}", "SharePoint List Contents Error")
+        return {"error": f"Unexpected error: {str(e)}"}
+
+
+@frappe.whitelist()
+def get_sharepoint_item_details(target_folder_docname, relative_path_to_item):
+    """
+    Gets details (link, full path, type) of a specific item in SharePoint.
+    The relative_path_to_item is relative to the target_folder_docname's root.
+    """
+    if not target_folder_docname or not relative_path_to_item:
+        return {"error": "Target Folder DocName and relative path to item are required."}
+
+    try:
+        folder_doc = frappe.get_doc("Folder", target_folder_docname)
+        if not folder_doc.microsoft_entra_group:
+            return {"error": f"Folder '{target_folder_docname}' does not have a Microsoft Entra Group linked."}
+        
+        group_doc = frappe.get_doc("Microsoft Entra Group", folder_doc.microsoft_entra_group)
+        if not group_doc.sharepoint_drive_id:
+            return {"error": f"Linked Microsoft Entra Group for Folder '{target_folder_docname}' is missing its SharePoint Drive ID."}
+
+        drive_id = group_doc.sharepoint_drive_id
+        base_sp_path_from_folder_doc = (folder_doc.folder_path or "").strip("/")
+        
+        # relative_path_to_item is already relative to the Folder DocType's root
+        clean_relative_path_to_item = relative_path_to_item.strip("/")
+
+        if base_sp_path_from_folder_doc and clean_relative_path_to_item:
+            full_item_path_for_api = f"{base_sp_path_from_folder_doc}/{clean_relative_path_to_item}"
+        elif base_sp_path_from_folder_doc: # Should not happen if relative_path_to_item is to a specific item
+            full_item_path_for_api = base_sp_path_from_folder_doc
+        elif clean_relative_path_to_item:
+            full_item_path_for_api = clean_relative_path_to_item
+        else:
+            return {"error": "Invalid item path provided."}
+
+
+        headers = get_headers()
+        encoded_full_item_path = urllib.parse.quote(full_item_path_for_api)
+        graph_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root:/{encoded_full_item_path}"
+        
+        response = requests.get(graph_url, headers=headers)
+        response.raise_for_status()
+        item_data = response.json()
+
+        is_file = "file" in item_data
+        # The 'path' in parentReference might be useful for constructing absolute_path if needed differently
+        # For now, use the known full_item_path_for_api as the basis for absolute_path
+        # Construct a user-friendly absolute path, e.g., "Shared Documents/FolderA/File.txt"
+        # The item_data.get("parentReference", {}).get("path") gives path from drive root.
+        # Example: /drives/b!..../root:/FolderFromDoc/RelPathToItem
+        # We need to extract the part after "root:"
+        sp_path_from_drive_root = item_data.get("parentReference", {}).get("path", "")
+        if sp_path_from_drive_root and 'root:' in sp_path_from_drive_root:
+            sp_path_from_drive_root = sp_path_from_drive_root.split('root:', 1)[1]
+        
+        # Ensure it starts with a slash if not empty
+        if sp_path_from_drive_root and not sp_path_from_drive_root.startswith('/'):
+             sp_path_from_drive_root = '/' + sp_path_from_drive_root
+
+        absolute_path = f"{sp_path_from_drive_root}/{item_data.get('name')}".replace("//","/")
+
+
+        return {
+            "sharepoint_link": item_data.get("webUrl"),
+            "absolute_path": absolute_path,
+            "name": item_data.get("name"),
+            "is_file": is_file,
+            "id": item_data.get("id")
+        }
+
+    except requests.exceptions.RequestException as e:
+        err_msg = e.response.text if e.response else str(e)
+        frappe.log_error(f"Graph API error getting item details for {target_folder_docname} at '{relative_path_to_item}': {err_msg}", "SharePoint Item Details Error")
+        return {"error": f"API Error: {err_msg}"}
+    except frappe.DoesNotExistError as e:
+        frappe.log_error(f"DoesNotExistError for {target_folder_docname}: {e}", "SharePoint Item Details Error")
+        return {"error": str(e)}
+    except Exception as e:
+        frappe.log_error(f"Error getting SharePoint item details for {target_folder_docname} at '{relative_path_to_item}': {frappe.get_traceback()}", "SharePoint Item Details Error")
+        return {"error": f"Unexpected error: {str(e)}"}
+
+
+@frappe.whitelist()
+def upload_file_to_path(doctype, docname, file_doc_name, target_folder_docname, target_relative_path="/"):
+    """
+    Uploads a file to a specific relative path within a SharePoint folder defined by 'Folder' DocType.
+    Updates the source document's 'teams_link' and 'path' fields.
+    target_relative_path is relative to the target_folder_docname's root.
+    """
+    if not doctype or not docname or not file_doc_name or not target_folder_docname:
+        return {"error": "Doctype, Docname, File Doc Name, and Target Folder DocName are required."}
+
+    try:
+        doc = frappe.get_doc(doctype, docname)
+        file_doc = frappe.get_doc("File", file_doc_name)
+
+        folder_settings_doc = frappe.get_doc("Folder", target_folder_docname)
+        if not folder_settings_doc.microsoft_entra_group:
+            return {"error": f"Target Folder '{target_folder_docname}' does not have a Microsoft Entra Group linked."}
+
+        group_doc = frappe.get_doc("Microsoft Entra Group", folder_settings_doc.microsoft_entra_group)
+        if not group_doc.sharepoint_drive_id:
+            return {"error": f"Linked Microsoft Entra Group for Target Folder '{target_folder_docname}' is missing its SharePoint Drive ID."}
+
+        drive_id = group_doc.sharepoint_drive_id
+        # Base path from the 'Folder' doctype record.
+        base_sp_path_from_folder_doc = (folder_settings_doc.folder_path or "").strip("/")
+        
+        # target_relative_path is the path *within* the Folder DocType's location.
+        clean_target_relative_path = target_relative_path.strip("/")
+
+        # Construct the final SharePoint folder path for upload by combining base and relative.
+        if base_sp_path_from_folder_doc and clean_target_relative_path:
+            final_sp_folder_path = f"{base_sp_path_from_folder_doc}/{clean_target_relative_path}"
+        elif base_sp_path_from_folder_doc:
+            final_sp_folder_path = base_sp_path_from_folder_doc
+        elif clean_target_relative_path:
+            final_sp_folder_path = clean_target_relative_path
+        else: # Uploading to the root of the folder_settings_doc.folder_path or drive root if base is also empty
+            final_sp_folder_path = "" # Represents root for create_sharepoint_folder_if_not_exists logic
+
+        # Ensure the target folder structure exists in SharePoint
+        # If final_sp_folder_path is empty, create_sharepoint_folder_if_not_exists should correctly use "root" for parent_item_id.
+        target_sp_folder_id = create_sharepoint_folder_if_not_exists(drive_id, final_sp_folder_path if final_sp_folder_path else "/")
+        if not target_sp_folder_id:
+            return {"error": "Failed to ensure target SharePoint folder exists."} # Error already thrown by create_sharepoint_folder_if_not_exists
+
+        file_path_abs = get_files_path(file_doc.file_name, is_private=file_doc.is_private)
+        if not os.path.exists(file_path_abs):
+            return {"error": f"Local file not found at path: {file_path_abs}"}
+
+        file_name_on_sp = file_doc.file_name
+        encoded_file_name_on_sp = urllib.parse.quote(file_name_on_sp, safe='')
+        
+        # Upload URL using the ID of the target folder
+        upload_url_base = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{target_sp_folder_id}:/{encoded_file_name_on_sp}:"
+        
+        file_size = os.path.getsize(file_path_abs)
+        upload_api_response_data = None
+
+        if file_size > 4 * 1024 * 1024: # More than 4MB
+            # TODO: Implement resumable upload for upload_file_to_path
+            frappe.throw("File size exceeds 4MB. Resumable upload for specific path not yet implemented in this function.")
+        else:
+            upload_url = f"{upload_url_base}/content"
+            headers = get_headers()
+            content_type = getattr(file_doc, "content_type", None) or "application/octet-stream"
+            headers["Content-Type"] = content_type
+            with open(file_path_abs, "rb") as f:
+                file_content = f.read()
+            
+            response = requests.put(upload_url, headers=headers, data=file_content)
+            response.raise_for_status()
+            upload_api_response_data = response.json()
+
+        if not upload_api_response_data or not upload_api_response_data.get("webUrl"):
+            return {"error": "Upload to SharePoint succeeded but no webUrl returned."}
+
+        sharepoint_link = upload_api_response_data.get("webUrl")
+        
+        # Construct user-friendly absolute path
+        sp_path_from_drive_root_for_file = upload_api_response_data.get("parentReference", {}).get("path", "")
+        if sp_path_from_drive_root_for_file and 'root:' in sp_path_from_drive_root_for_file:
+            sp_path_from_drive_root_for_file = sp_path_from_drive_root_for_file.split('root:', 1)[1]
+        if sp_path_from_drive_root_for_file and not sp_path_from_drive_root_for_file.startswith('/'):
+             sp_path_from_drive_root_for_file = '/' + sp_path_from_drive_root_for_file
+        
+        absolute_file_path_on_sp = f"{sp_path_from_drive_root_for_file}/{file_name_on_sp}".replace("//","/")
+
+        # Update the original document
+        doc.set("teams_link", sharepoint_link)
+        doc.set("path", absolute_file_path_on_sp) # New field
+        doc.set("folder", target_folder_docname) # Set the folder field to the one used for upload
+        
+        # Create a version entry (similar to upload_file_to_sharepoint)
+        action_details = { "action": "Upload to Path", "user": frappe.session.user }
+        current_version_count = len(doc.get("versions", []))
+        next_version_number = current_version_count + 1
+        new_version = doc.append("versions", {
+            "version_number": next_version_number,
+            "sharepoint_link": sharepoint_link,
+            "action_taken": action_details.get("action"),
+            "action_by": action_details.get("user"),
+            "action_timestamp": frappe.utils.now_datetime(),
+            "file_url": file_doc.file_url if doc.get("store_locally") else None,
+            "path": absolute_file_path_on_sp # Store path in version too
+        })
+        doc.save(ignore_permissions=True) # Save to persist changes and new version
+
+        if not doc.get("store_locally"):
+            try:
+                os.remove(file_path_abs)
+                frappe.db.set_value("Document Version", new_version.name, "file_url", None)
+            except Exception as del_err:
+                frappe.log_error(f"Failed to delete local file '{file_path_abs}' after SP upload: {del_err}", "SharePoint Upload to Path")
+                # Non-critical, so don't throw, just log.
+
+        return {
+            "sharepoint_link": sharepoint_link,
+            "absolute_path": absolute_file_path_on_sp,
+            "version_id": upload_api_response_data.get("id", upload_api_response_data.get("eTag"))
+        }
+
+    except requests.exceptions.RequestException as e:
+        err_msg = e.response.text if e.response else str(e)
+        frappe.log_error(f"Graph API error uploading to path: {err_msg}", "SharePoint Upload to Path Error")
+        return {"error": f"API Error: {err_msg}"}
+    except frappe.DoesNotExistError as e:
+        frappe.log_error(f"DoesNotExistError during upload to path: {e}", "SharePoint Upload to Path Error")
+        return {"error": str(e)}
+    except Exception as e:
+        frappe.log_error(f"Error uploading to SharePoint path: {frappe.get_traceback()}", "SharePoint Upload to Path Error")
+        return {"error": f"Unexpected error: {str(e)}"}
+
+
 # TODO: Implement upload_large_file function using createUploadSession
 # def upload_large_file(drive_id, parent_folder_id, file_name, file_path_abs):
 #     pass
