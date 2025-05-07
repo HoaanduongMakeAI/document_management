@@ -116,15 +116,21 @@ frappe.ui.form.on('Incoming Document', {
 
     refresh: function(frm) {
         if (!frm.is_new()) {
-            // Check if the button field 'upload_to_sharepoint_btn' (defined in JSON) exists
-            if (frm.fields_dict['upload_to_sharepoint_btn']) {
-                // Set the click handler for the button
-                frm.set_df_property('upload_to_sharepoint_btn', 'click', () => {
-                    frm.events.custom_handle_attach_and_upload(frm);
-                });
-                // Ensure the button is visible (it should be by default)
-                // frm.set_df_property('upload_to_sharepoint_btn', 'hidden', 0);
-            }
+            // Add the custom button (dynamic)
+            frm.add_custom_button(__('Attach and Upload to SharePoint'), function() {
+                frm.trigger('custom_handle_attach_and_upload');
+            }, __('Actions'));
+
+            // The 'upload_to_sharepoint_btn' (defined in JSON) will be handled by the event below
+        }
+    },
+
+    upload_to_sharepoint_btn: function(frm) {
+        // This function will be called when the 'upload_to_sharepoint_btn' (from JSON) is clicked
+        if (!frm.is_new()) {
+            frm.trigger('custom_handle_attach_and_upload');
+        } else {
+            frappe.msgprint(__('Please save the document before attaching files.'));
         }
     },
 
