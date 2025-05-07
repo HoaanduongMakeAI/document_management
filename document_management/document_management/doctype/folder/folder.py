@@ -3,7 +3,7 @@
 
 import frappe
 from frappe.model.document import Document
-import copy # Import the copy module
+import re # For parsing folder_path
 # Corrected import path
 from document_management.document_management.utils.sharepoint_integration import create_sharepoint_folder_if_not_exists
 
@@ -11,40 +11,64 @@ class Folder(Document):
     def autoname(self):
         """
         Sets the name of the Folder document based on the linked Microsoft Entra Group name and folder path.
-        Format: (<Group Name>)<Folder Path>
+        Ensures self.folder_path stores only the path segments (e.g., "General/Công văn").
+        Format for self.name: (<Group Name>)/<Folder Path Segments>
         """
-        # Store a deep copy of the original folder_path
-        original_folder_path = copy.deepcopy(self.folder_path)
+        input_folder_path_value = self.folder_path # Value from the form or previous state
 
-        if self.microsoft_entra_group and original_folder_path:
-            try:
-                # Fetch the linked Microsoft Entra Group document
-                group_doc = frappe.get_doc("Microsoft Entra Group", self.microsoft_entra_group)
-                group_name = group_doc.group_name if group_doc.group_name else "Unnamed Group"
-                
-                # Ensure folder_path starts with a '/' for consistent formatting
-                formatted_folder_path = original_folder_path if original_folder_path.startswith('/') else '/' + original_folder_path
-
-                # Construct the new name
-                self.name = f"({group_name}){formatted_folder_path}"
-                frappe.msgprint(f"Setting Folder name to: {self.name}", indicator="blue")
-
-            except frappe.DoesNotExistError:
-                frappe.log_error(f"Linked Microsoft Entra Group '{self.microsoft_entra_group}' not found for Folder '{original_folder_path}'. Using default naming.", "Folder Naming Error")
-                # Fallback to default naming if group doc is not found
-                self.name = original_folder_path
-            except Exception as e:
-                frappe.log_error(f"Error setting Folder name for path '{original_folder_path}': {frappe.get_traceback()}", "Folder Naming Error")
-                # Fallback to default naming on other errors
-                self.name = original_folder_path
-        elif original_folder_path:
-             # If no group is linked, use just the folder path as the name
-             self.name = original_folder_path
+        # 1. Determine the actual path component, stripping any potential group prefix from input
+        actual_path_segments = input_folder_path_value
+        if input_folder_path_value:
+            # Attempt to strip a "(group)"-like prefix
+            # Check if input starts with '(' and find the corresponding ')'
+            idx_closing_paren = -1
+            if input_folder_path_value.strip().startswith("("):
+                idx_closing_paren = input_folder_path_value.find(")")
+            
+            if idx_closing_paren != -1:
+                # Found a potential group prefix, take the part after ')'
+                path_candidate = input_folder_path_value[idx_closing_paren+1:].strip()
+                # Remove leading slash if present from this candidate
+                actual_path_segments = path_candidate.lstrip('/').strip()
+            else:
+                # No group-like prefix found, treat the whole thing as path segments
+                actual_path_segments = input_folder_path_value.strip()
         
-        # Ensure folder_path is not overwritten by the naming process
-        if original_folder_path and self.folder_path != original_folder_path:
-            self.folder_path = original_folder_path
+        # Clean the actual_path_segments: remove leading/trailing slashes for consistency
+        if actual_path_segments: # Check if not empty string
+            actual_path_segments = actual_path_segments.strip('/')
+        else: # If actual_path_segments became empty (e.g. input was "(Group)/" or just "/")
+            actual_path_segments = "" # Ensure it's an empty string, not None
 
+        # Update self.folder_path to be the clean path segments.
+        # This is the critical fix for the folder_path field itself.
+        self.folder_path = actual_path_segments
+
+        # 2. Determine the group name for naming
+        group_name_for_naming = "Unnamed Group" # Default
+        if self.microsoft_entra_group:
+            try:
+                group_doc = frappe.get_doc("Microsoft Entra Group", self.microsoft_entra_group)
+                # Ensure group_name exists and is not just whitespace
+                if group_doc.group_name and group_doc.group_name.strip():
+                    group_name_for_naming = group_doc.group_name.strip()
+            except frappe.DoesNotExistError:
+                frappe.log_error(f"Linked Microsoft Entra Group '{self.microsoft_entra_group}' not found. Using default group name '{group_name_for_naming}'.", "Folder Naming Error")
+            except Exception: # Catch any other error during group_doc fetching
+                frappe.log_error(f"Error fetching group name for '{self.microsoft_entra_group}'. Using default group name '{group_name_for_naming}'. Details: {frappe.get_traceback()}", "Folder Naming Error")
+
+        # 3. Construct self.name
+        if not self.folder_path: # After cleaning, if folder_path is empty
+            # Name will be just the group identifier, e.g., "(RealGroup)" or "(Unnamed Group)"
+            self.name = f"({group_name_for_naming})"
+            # Optional: Log or msgprint this specific case for clarity during operation
+            # frappe.msgprint(f"Folder path component is empty. Setting name to group: '{self.name}'. Original input: '{input_folder_path_value}'", indicator="orange", alert=True)
+        else:
+            # Name will be "(GroupName)/PathSegments"
+            self.name = f"({group_name_for_naming})/{self.folder_path}"
+
+        # The user-provided log "Setting Folder name to: {self.name}" can be re-enabled for debugging if needed
+        # frappe.msgprint(f"Processed autoname: self.name = '{self.name}', self.folder_path = '{self.folder_path}'", indicator="blue")
 
     # This method is called after the document is saved (created or updated)
     def on_update(self):
