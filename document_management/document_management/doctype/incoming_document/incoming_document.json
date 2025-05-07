@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:IN-{YYYY}-{MM}-{#####}",
+ "autoname": "field:incoming_number",
  "creation": "2025-04-21 13:12:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -60,7 +60,9 @@
   {
    "fieldname": "incoming_number",
    "fieldtype": "Data",
-   "label": "Incoming Number (Manual)"
+   "label": "Incoming Number (Manual)",
+   "reqd": 1,
+   "unique": 1
   },
   {
    "fieldname": "folder_section",
@@ -152,8 +154,6 @@
  "modified_by": "Administrator",
  "module": "Document Management",
  "name": "Incoming Document",
- "naming_rule": "By \"Naming Series\" field",
- "naming_series": "IN-.YYYY.-.MM.-",
  "owner": "Administrator",
  "permissions": [
   {
