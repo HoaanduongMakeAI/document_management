@@ -47,15 +47,25 @@ class Folder(Document):
         # 2. Determine the group name for naming
         group_name_for_naming = "Unnamed Group" # Default
         if self.microsoft_entra_group:
+            frappe.msgprint(f"DEBUG: self.microsoft_entra_group = {self.microsoft_entra_group}", title="Folder Autoname Debug")
             try:
                 group_doc = frappe.get_doc("Microsoft Entra Group", self.microsoft_entra_group)
+                frappe.msgprint(f"DEBUG: Fetched group_doc.name = {group_doc.name}", title="Folder Autoname Debug")
+                frappe.msgprint(f"DEBUG: group_doc.group_name = {group_doc.group_name}", title="Folder Autoname Debug")
                 # Ensure group_name exists and is not just whitespace
                 if group_doc.group_name and group_doc.group_name.strip():
                     group_name_for_naming = group_doc.group_name.strip()
+                    frappe.msgprint(f"DEBUG: Using group_name_for_naming = {group_name_for_naming}", title="Folder Autoname Debug")
+                else:
+                    frappe.msgprint(f"DEBUG: group_doc.group_name is empty or whitespace. Using default: '{group_name_for_naming}'", title="Folder Autoname Debug")
             except frappe.DoesNotExistError:
+                frappe.msgprint(f"DEBUG: Microsoft Entra Group '{self.microsoft_entra_group}' not found. Using default group name '{group_name_for_naming}'.", title="Folder Autoname Debug", indicator="orange")
                 frappe.log_error(f"Linked Microsoft Entra Group '{self.microsoft_entra_group}' not found. Using default group name '{group_name_for_naming}'.", "Folder Naming Error")
-            except Exception: # Catch any other error during group_doc fetching
+            except Exception as e: # Catch any other error during group_doc fetching
+                frappe.msgprint(f"DEBUG: Error fetching group name for '{self.microsoft_entra_group}'. Error: {str(e)}. Using default: '{group_name_for_naming}'.", title="Folder Autoname Debug", indicator="red")
                 frappe.log_error(f"Error fetching group name for '{self.microsoft_entra_group}'. Using default group name '{group_name_for_naming}'. Details: {frappe.get_traceback()}", "Folder Naming Error")
+        else:
+            frappe.msgprint("DEBUG: self.microsoft_entra_group is not set. Using default group name.", title="Folder Autoname Debug", indicator="orange")
 
         # 3. Construct self.name
         if not self.folder_path: # After cleaning, if folder_path is empty
