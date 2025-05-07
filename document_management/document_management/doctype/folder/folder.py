@@ -79,7 +79,7 @@ class Folder(Document):
             # frappe.msgprint(f"Folder path component is empty. Setting name to group: '{self.name}'. Original input: '{input_folder_path_value}'", indicator="orange", alert=True)
         else:
             # Name will be "(GroupName)/PathSegments"
-            self.name = f"({group_name_for_naming})/{self.folder_path}"
+            self.name = f"({group_name_for_naming}){self.folder_path}"
 
         # The user-provided log "Setting Folder name to: {self.name}" can be re-enabled for debugging if needed
         # frappe.msgprint(f"Processed autoname: self.name = '{self.name}', self.folder_path = '{self.folder_path}'", indicator="blue")
