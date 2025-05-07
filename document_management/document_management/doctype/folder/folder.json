@@ -36,8 +36,7 @@
  "modified_by": "Administrator",
  "module": "Document Management",
  "name": "Folder",
- "naming_rule": "By fieldname",
- "autoname": "field:folder_path",
+ "naming_rule": "Set by user",
  "owner": "Administrator",
  "permissions": [
   {
