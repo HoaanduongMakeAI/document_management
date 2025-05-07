@@ -101,9 +101,8 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
                                             frm.set_value('teams_link', r_upload.message.sharepoint_link);
                                             frm.set_value('path', r_upload.message.absolute_path);
                                             frm.set_value('folder', target_folder_docname_for_action);
-                                            frappe.show_alert({ message: __('File successfully uploaded and linked.'), indicator: 'green' });
-                                            frm.save();
-                                            frm.reload_doc();
+                                            frappe.show_alert({ message: __('File successfully uploaded and linked. Please save the document.'), indicator: 'green' });
+                                            // User should save manually after mandatory fields are filled.
                                             dialog.hide();
                                         } else if (r_upload.message && r_upload.message.error) {
                                             frappe.msgprint({ title: __('Upload Error'), indicator: 'red', message: r_upload.message.error });
@@ -146,9 +145,8 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
                                 frm.set_value('teams_link', r_item.message.sharepoint_link);
                                 frm.set_value('path', r_item.message.absolute_path);
                                 frm.set_value('folder', target_folder_docname_for_action);
-                                frappe.show_alert({ message: __('Successfully linked to existing SharePoint file.'), indicator: 'green' });
-                                frm.save();
-                                frm.reload_doc();
+                                frappe.show_alert({ message: __('Successfully linked to existing SharePoint file. Please save the document.'), indicator: 'green' });
+                                // User should save manually after mandatory fields are filled.
                                 dialog.hide();
                             } else if (r_item.message && !r_item.message.is_file) {
                                 frappe.msgprint({ title: __('Selection Error'), indicator: 'orange', message: __('The selected item is unexpectedly a folder. Please try again.')});
