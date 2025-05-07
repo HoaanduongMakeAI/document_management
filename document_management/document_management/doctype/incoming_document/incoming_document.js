@@ -19,9 +19,9 @@ frappe.ui.form.on('Incoming Document', {
                         let new_folder_docname = this.get_value();
                         if (new_folder_docname) {
                             current_selected_folder_docname = new_folder_docname;
-                            current_sharepoint_path = '/'; // Reset to root of this new folder
-                            selected_item_for_linking = null; // Clear any previous file selection
-                            dialog.get_field('file_to_upload').toggle(true); // Show file upload if folder changes
+                            current_sharepoint_path = '/';
+                            selected_item_for_linking = null;
+                            dialog.get_field('file_to_upload').toggle(true);
                             update_path_display();
                         } else {
                             current_selected_folder_docname = '';
@@ -31,7 +31,7 @@ frappe.ui.form.on('Incoming Document', {
                     }
                 },
                 {
-                    fieldname: 'path_display_html',
+                    fieldname: 'path_display_html', // Will display list and selection info
                     fieldtype: 'HTML',
                     label: __('Current Path Contents')
                 },
@@ -46,9 +46,9 @@ frappe.ui.form.on('Incoming Document', {
                             parts.pop(); // Go up one level
                             current_sharepoint_path = '/' + parts.join('/');
                             if (current_sharepoint_path === '//') current_sharepoint_path = '/';
-                            selected_item_for_linking = null; // Clear file selection when navigating
+                            selected_item_for_linking = null;
                             dialog.get_field('file_to_upload').toggle(true);
-                            update_path_display();
+                            update_path_display(); // This will clear the selection message by re-rendering
                         }
                     }
                 },
@@ -200,8 +200,8 @@ frappe.ui.form.on('Incoming Document', {
                             r.message.items.forEach(item => {
                                 let item_class = "sharepoint-item";
                                 let item_style = "text-decoration: none; color: inherit; display: block;";
-                                if (selected_item_for_linking && selected_item_for_linking.path === item.path) {
-                                    item_class += " active"; // Bootstrap active class for visual selection
+                                if (selected_item_for_linking && selected_item_for_linking.path === item.path && !selected_item_for_linking.is_folder) {
+                                    item_class += " active";
                                 }
                                 html += `<li class="list-group-item list-group-item-action p-2">
                                             <a href="#" class="${item_class}" data-path="${item.path}" data-name="${item.name}" data-is-folder="${item.is_folder}" style="${item_style}">
@@ -211,27 +211,36 @@ frappe.ui.form.on('Incoming Document', {
                             });
                             html += '</ul>';
                         }
+                        // Append selection info if a file is selected for linking
+                        if (selected_item_for_linking && !selected_item_for_linking.is_folder) {
+                            html += `<p class="text-info small mt-2 p-2"><strong>${__("Selected for linking:")} ${selected_item_for_linking.name}</strong> (${selected_item_for_linking.path})</p>`;
+                        }
+
                         dialog.get_field('path_display_html').$wrapper.html(html);
                         dialog.get_field('back_button').toggle(current_sharepoint_path !== '/' && current_sharepoint_path !== '');
 
                         dialog.get_field('path_display_html').$wrapper.find('a.sharepoint-item').on('click', function(e) {
                             e.preventDefault();
-                            let new_relative_path_in_folder = $(this).data('path'); // This path is relative to current_selected_folder_docname's root
+                            let new_relative_path_in_folder = $(this).data('path');
                             let is_folder = $(this).data('is-folder');
                             let item_name = $(this).data('name');
 
                             if (is_folder) {
-                                current_sharepoint_path = new_relative_path_in_folder; // Navigate into the folder
-                                selected_item_for_linking = null; // Clear file selection
-                                dialog.get_field('file_to_upload').toggle(true); // Allow upload in new folder
-                                update_path_display();
+                                current_sharepoint_path = new_relative_path_in_folder;
+                                selected_item_for_linking = null;
+                                dialog.get_field('file_to_upload').toggle(true);
+                                update_path_display(); // Will clear selection message
                             } else {
                                 // File selected for linking
                                 selected_item_for_linking = { name: item_name, path: new_relative_path_in_folder, is_folder: false };
-                                // Visually indicate selection by re-rendering or adding a class
-                                update_path_display(); // Re-render to show active state
-                                dialog.get_field('file_to_upload').toggle(false); // Hide upload if linking existing file
-                                frappe.show_alert({message: __("File '{0}' selected for linking. Click 'Process Selection' to confirm.", [item_name]), indicator: 'info'});
+                                dialog.get_field('file_to_upload').toggle(true); // Ensure upload field is visible
+                                update_path_display(); // Re-render to show the "Selected for linking" message and highlight
+                                frappe.show_alert({
+                                    message: __("File '{0}' is selected for linking. If 'Process Selection' is clicked now, this file will be linked. To upload a new file instead, choose one from 'Upload New File'.", [item_name]),
+                                    indicator: 'info',
+                                    toast: true,
+                                    display_length: 10000
+                                });
                             }
                         });
                     } else if (r.message && r.message.error) {
