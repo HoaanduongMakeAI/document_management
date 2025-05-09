@@ -159,7 +159,8 @@ frappe.ui.form.on('Folder', {
                                                         if (r_item_details.message && r_item_details.message.sharepoint_link) {
                                                             teams_link = r_item_details.message.sharepoint_link;
                                                         } else {
-                                                            console.warn("Could not fetch SharePoint link for new Incoming Document. Path: ", clicked_item_path);
+                                                            frappe.throw(__("Could not fetch SharePoint link for the selected file. Document creation aborted. Path: {0}", [clicked_item_path]));
+                                                            return; // Stop further execution
                                                         }
                                                         frappe.new_doc('Incoming Document', {
                                                             folder: frm.doc.name,
@@ -170,12 +171,7 @@ frappe.ui.form.on('Folder', {
                                                     },
                                                     error: function(err_details) {
                                                         console.error("Error fetching SharePoint link for new Incoming Document: ", err_details);
-                                                        // Proceed without link if fetching fails
-                                                        frappe.new_doc('Incoming Document', {
-                                                            folder: frm.doc.name,
-                                                            path: absolute_path_for_new_doc
-                                                        });
-                                                        file_action_dialog.hide();
+                                                        frappe.throw(__("Error fetching SharePoint link: {0}. Document creation aborted.", [err_details.message || JSON.stringify(err_details)]));
                                                     }
                                                 });
                                             }
@@ -203,7 +199,8 @@ frappe.ui.form.on('Folder', {
                                                         if (r_item_details.message && r_item_details.message.sharepoint_link) {
                                                             teams_link = r_item_details.message.sharepoint_link;
                                                         } else {
-                                                            console.warn("Could not fetch SharePoint link for new Outgoing Document. Path: ", clicked_item_path);
+                                                            frappe.throw(__("Could not fetch SharePoint link for the selected file. Document creation aborted. Path: {0}", [clicked_item_path]));
+                                                            return; // Stop further execution
                                                         }
                                                         frappe.new_doc('Outgoing Document', {
                                                             folder: frm.doc.name,
@@ -214,12 +211,7 @@ frappe.ui.form.on('Folder', {
                                                     },
                                                     error: function(err_details) {
                                                         console.error("Error fetching SharePoint link for new Outgoing Document: ", err_details);
-                                                         // Proceed without link if fetching fails
-                                                        frappe.new_doc('Outgoing Document', {
-                                                            folder: frm.doc.name,
-                                                            path: absolute_path_for_new_doc
-                                                        });
-                                                        file_action_dialog.hide();
+                                                        frappe.throw(__("Error fetching SharePoint link: {0}. Document creation aborted.", [err_details.message || JSON.stringify(err_details)]));
                                                     }
                                                 });
                                             }
