@@ -145,15 +145,39 @@ frappe.ui.form.on('Folder', {
                                                 let rel_nd = clicked_item_path;
                                                 let absolute_path_for_new_doc;
                                                 if (rel_nd === '/') { absolute_path_for_new_doc = base_nd || '/'; }
-                                                else { absolute_path_for_new_doc = base_nd.replace(/\/$/, '') + '/' + rel_nd.replace(/^\//, ''); }
-                                                if (absolute_path_for_new_doc.startsWith('//')) { absolute_path_for_new_doc = absolute_path_for_new_doc.substring(1); }
+                                                else { absolute_path_for_new_doc = (base_nd.replace(/\/$/, '') + '/' + rel_nd.replace(/^\//, '')).replace(/\/\//g, '/'); }
                                                 if (absolute_path_for_new_doc === "") absolute_path_for_new_doc = "/";
 
-                                                frappe.new_doc('Incoming Document', {
-                                                    folder: frm.doc.name,
-                                                    path: absolute_path_for_new_doc,
+                                                frappe.call({
+                                                    method: 'document_management.document_management.utils.sharepoint_integration.get_sharepoint_item_details',
+                                                    args: {
+                                                        target_folder_docname: current_folder_docname,
+                                                        relative_path_to_item: clicked_item_path // This is relative to the Folder's root
+                                                    },
+                                                    callback: function(r_item_details) {
+                                                        let teams_link = '';
+                                                        if (r_item_details.message && r_item_details.message.sharepoint_link) {
+                                                            teams_link = r_item_details.message.sharepoint_link;
+                                                        } else {
+                                                            console.warn("Could not fetch SharePoint link for new Incoming Document. Path: ", clicked_item_path);
+                                                        }
+                                                        frappe.new_doc('Incoming Document', {
+                                                            folder: frm.doc.name,
+                                                            path: absolute_path_for_new_doc,
+                                                            teams_link: teams_link
+                                                        });
+                                                        file_action_dialog.hide();
+                                                    },
+                                                    error: function(err_details) {
+                                                        console.error("Error fetching SharePoint link for new Incoming Document: ", err_details);
+                                                        // Proceed without link if fetching fails
+                                                        frappe.new_doc('Incoming Document', {
+                                                            folder: frm.doc.name,
+                                                            path: absolute_path_for_new_doc
+                                                        });
+                                                        file_action_dialog.hide();
+                                                    }
                                                 });
-                                                file_action_dialog.hide();
                                             }
                                         },
                                         {
@@ -165,15 +189,39 @@ frappe.ui.form.on('Folder', {
                                                 let rel_nd = clicked_item_path;
                                                 let absolute_path_for_new_doc;
                                                 if (rel_nd === '/') { absolute_path_for_new_doc = base_nd || '/'; }
-                                                else { absolute_path_for_new_doc = base_nd.replace(/\/$/, '') + '/' + rel_nd.replace(/^\//, ''); }
-                                                if (absolute_path_for_new_doc.startsWith('//')) { absolute_path_for_new_doc = absolute_path_for_new_doc.substring(1); }
+                                                else { absolute_path_for_new_doc = (base_nd.replace(/\/$/, '') + '/' + rel_nd.replace(/^\//, '')).replace(/\/\//g, '/'); }
                                                 if (absolute_path_for_new_doc === "") absolute_path_for_new_doc = "/";
 
-                                                 frappe.new_doc('Outgoing Document', {
-                                                    folder: frm.doc.name,
-                                                    path: absolute_path_for_new_doc,
+                                                frappe.call({
+                                                    method: 'document_management.document_management.utils.sharepoint_integration.get_sharepoint_item_details',
+                                                    args: {
+                                                        target_folder_docname: current_folder_docname,
+                                                        relative_path_to_item: clicked_item_path // Relative to Folder's root
+                                                    },
+                                                    callback: function(r_item_details) {
+                                                        let teams_link = '';
+                                                        if (r_item_details.message && r_item_details.message.sharepoint_link) {
+                                                            teams_link = r_item_details.message.sharepoint_link;
+                                                        } else {
+                                                            console.warn("Could not fetch SharePoint link for new Outgoing Document. Path: ", clicked_item_path);
+                                                        }
+                                                        frappe.new_doc('Outgoing Document', {
+                                                            folder: frm.doc.name,
+                                                            path: absolute_path_for_new_doc,
+                                                            teams_link: teams_link
+                                                        });
+                                                        file_action_dialog.hide();
+                                                    },
+                                                    error: function(err_details) {
+                                                        console.error("Error fetching SharePoint link for new Outgoing Document: ", err_details);
+                                                         // Proceed without link if fetching fails
+                                                        frappe.new_doc('Outgoing Document', {
+                                                            folder: frm.doc.name,
+                                                            path: absolute_path_for_new_doc
+                                                        });
+                                                        file_action_dialog.hide();
+                                                    }
                                                 });
-                                                file_action_dialog.hide();
                                             }
                                         },
                                         {
