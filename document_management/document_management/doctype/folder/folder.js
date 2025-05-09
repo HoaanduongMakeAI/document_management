@@ -56,7 +56,7 @@ frappe.ui.form.on('Folder', {
             }
 
             frappe.call({
-                method: "document_management.document_management.utils.sharepoint_integration.list_sharepoint_folder_contents",
+                method: "document_management.utils.sharepoint_integration.list_sharepoint_folder_contents",
                 args: {
                     folder_docname: current_folder_docname,
                     relative_path: current_sharepoint_path // This is relative to the Folder DocType's root
@@ -134,6 +134,67 @@ frappe.ui.form.on('Folder', {
                                                     }
                                                 });
                                                 file_action_dialog.hide();
+                                            }
+                                        },
+                                        {
+                                            fieldname: 'download_btn',
+                                            fieldtype: 'Button',
+                                            label: __('Download File'),
+                                            click: () => {
+                                                // First, get the item details to fetch the sharepoint_link (teams_link)
+                                                frappe.show_alert({ message: __('Fetching file details for download...'), indicator: 'info' });
+                                                frappe.call({
+                                                    method: 'document_management.document_management.utils.sharepoint_integration.get_sharepoint_item_details',
+                                                    args: {
+                                                        target_folder_docname: current_folder_docname,
+                                                        relative_path_to_item: clicked_item_path
+                                                    },
+                                                    callback: function(r_item_details_for_download) {
+                                                        if (r_item_details_for_download.message && r_item_details_for_download.message.is_file && r_item_details_for_download.message.sharepoint_link) {
+                                                            let teams_link_for_download = r_item_details_for_download.message.sharepoint_link;
+                                                            
+                                                            // Now call the download method
+                                                            frappe.show_alert({ message: __('Initiating download...'), indicator: 'info' });
+                                                            frappe.call({
+                                                                method: 'document_management.document_management.utils.sharepoint_integration.download_items',
+                                                                args: {
+                                                                    teams_link: teams_link_for_download
+                                                                },
+                                                                callback: function(r_download) {
+                                                                    if (r_download.message && r_download.message.success) {
+                                                                        frappe.show_alert({ message: __('Download started. Check your browser downloads.'), indicator: 'green', display_length: 5000 });
+                                                                        // The actual download is handled by the browser via content-disposition from server
+                                                                    } else if (r_download.message && r_download.message.error) {
+                                                                        frappe.msgprint({ title: __('Download Error'), indicator: 'red', message: r_download.message.error });
+                                                                    } else if (r_download.exc) {
+                                                                        frappe.msgprint({ title: __('Server Error'), indicator: 'red', message: __('An error occurred while trying to download the file. Check server logs.')});
+                                                                        console.error("Download File Error:", r_download.exc);
+                                                                    } else {
+                                                                        // This case might occur if download_items doesn't return a clear success/error message structure
+                                                                        // but still initiates a download.
+                                                                        frappe.show_alert({ message: __('Download initiated. If it does not start, please check console logs or contact support.'), indicator: 'orange', display_length: 7000 });
+                                                                    }
+                                                                },
+                                                                error: function(err_download) {
+                                                                    frappe.msgprint({ title: __('Network Error'), indicator: 'red', message: __('Failed to communicate for file download.')});
+                                                                    console.error("AJAX Error (Download File):", err_download);
+                                                                }
+                                                            });
+                                                        } else if (r_item_details_for_download.message && r_item_details_for_download.message.error) {
+                                                            frappe.msgprint({ title: __('Error'), indicator: 'red', message: r_item_details_for_download.message.error });
+                                                        } else if (r_item_details_for_download.exc) {
+                                                            frappe.msgprint({ title: __('Server Error'), indicator: 'red', message: __('Error fetching file details for download. Check server logs.')});
+                                                            console.error("Get Item Details for Download Error:", r_item_details_for_download.exc);
+                                                        } else {
+                                                            frappe.msgprint(__('Could not retrieve file details necessary for download.'));
+                                                        }
+                                                    },
+                                                    error: function(err_item_details) {
+                                                        frappe.msgprint({ title: __('Network Error'), indicator: 'red', message: __('Failed to fetch file details for download.')});
+                                                        console.error("AJAX Error (Get Item Details for Download):", err_item_details);
+                                                    }
+                                                });
+                                                file_action_dialog.hide(); // Hide dialog after initiating the process
                                             }
                                         },
                                         {

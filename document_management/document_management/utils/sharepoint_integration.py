@@ -5,6 +5,7 @@ import frappe
 import requests
 import os
 import urllib.parse
+import base64 # Added for URL encoding
 from frappe.utils import get_site_path, get_files_path, encode
 # Import the helper function to get settings
 from document_management.document_management.utils import get_settings # Updated import path
@@ -752,3 +753,100 @@ def upload_file_to_path(doctype, docname, file_doc_name, target_folder_docname, 
 #     pass
 
 # TODO: Add functions for other interactions if needed (e.g., get_file, delete_file, create_folder)
+
+# Helper function (not whitelisted, internal use)
+def _get_drive_item_from_web_url(web_url):
+    """
+    Resolves a SharePoint web URL (teams_link) to get driveItem details like id, name, driveId.
+    """
+    if not web_url:
+        frappe.throw(_("Web URL is required to fetch drive item details."))
+
+    try:
+        # Encode the web_url as per Graph API requirements for sharing links: u!<base64-encoded-url-without-padding>
+        encoded_url_bytes = base64.urlsafe_b64encode(web_url.encode('utf-8'))
+        encoded_url_string = encoded_url_bytes.decode('utf-8').rstrip('=')
+        
+        # The 'u!' prefix is crucial for user-generated sharing URLs (webUrls)
+        graph_api_url = f"https://graph.microsoft.com/v1.0/shares/u!{encoded_url_string}/driveItem?$select=id,name,parentReference,file,size"
+        
+        headers = get_headers() # Assumes get_headers() is defined and works
+        response = requests.get(graph_api_url, headers=headers)
+        response.raise_for_status() # Raises HTTPError for bad responses (4XX or 5XX)
+        item_data = response.json()
+        
+        drive_id = item_data.get("parentReference", {}).get("driveId")
+        item_id = item_data.get("id")
+        item_name = item_data.get("name")
+
+        if not all([drive_id, item_id, item_name]):
+            missing_details = []
+            if not drive_id: missing_details.append("driveId")
+            if not item_id: missing_details.append("itemId")
+            if not item_name: missing_details.append("name")
+            frappe.throw(_("Could not extract necessary details ({0}) from the shared link response.").format(", ".join(missing_details)))
+            
+        return {
+            "drive_id": drive_id,
+            "item_id": item_id,
+            "name": item_name,
+            "is_file": "file" in item_data # Check if it's a file system object (could be a folder if link points to folder)
+        }
+    except requests.exceptions.RequestException as e:
+        err_msg = e.response.text if e.response and e.response.text else str(e)
+        frappe.log_error(f"Graph API error resolving share link '{web_url}': {err_msg}", "SharePoint Download Helper")
+        # Do not throw here, let the calling function handle the return structure for JS
+        raise frappe.ValidationError(_("API Error resolving share link: {0}").format(err_msg))
+    except Exception as e:
+        frappe.log_error(f"Unexpected error resolving share link '{web_url}': {frappe.get_traceback()}", "SharePoint Download Helper")
+        raise frappe.ValidationError(_("Unexpected error resolving share link: {0}").format(str(e)))
+
+
+@frappe.whitelist()
+def download_items(teams_link):
+    """
+    Initiates a download for a file specified by its SharePoint teams_link (webUrl).
+    The file is proxied through Frappe server to the client.
+    """
+    if not teams_link:
+        return {"message": {"error": _("SharePoint URL (teams_link) is required for download.")}}
+
+    try:
+        item_info = _get_drive_item_from_web_url(teams_link)
+
+        if not item_info.get("is_file"):
+            return {"message": {"error": _("The provided link does not point to a downloadable file.")}}
+        
+        drive_id = item_info["drive_id"]
+        item_id = item_info["item_id"]
+        item_name = item_info["name"]
+        
+        # Construct the direct content download URL from Graph API
+        content_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{item_id}/content"
+        
+        headers = get_headers() # Get fresh auth headers
+        
+        # Fetch the file content
+        # Use stream=True for potentially large files, though response.content will still buffer it
+        # For true streaming to client, Frappe's response mechanism would need more setup.
+        file_response = requests.get(content_url, headers=headers, stream=True)
+        file_response.raise_for_status() # Ensure the request was successful
+
+        # Set Frappe response for file download
+        frappe.local.response.filename = item_name
+        frappe.local.response.filecontent = file_response.content # Reads full content into memory
+        frappe.local.response.type = 'download'
+        
+        # This is what the JS callback expects for success
+        return {"message": {"success": True}}
+
+    except frappe.ValidationError as e: # Catch errors from _get_drive_item_from_web_url
+        frappe.log_error(f"Validation error during download for link '{teams_link}': {str(e)}", "SharePoint Download")
+        return {"message": {"error": str(e)}}
+    except requests.exceptions.RequestException as e:
+        err_msg = e.response.text if e.response and e.response.text else str(e)
+        frappe.log_error(f"Graph API request error during download for link '{teams_link}': {err_msg}", "SharePoint Download")
+        return {"message": {"error": _("API Error during download: {0}").format(err_msg)}}
+    except Exception as e:
+        frappe.log_error(f"Unexpected error during download for link '{teams_link}': {frappe.get_traceback()}", "SharePoint Download")
+        return {"message": {"error": _("Unexpected error during download: {0}").format(str(e))}}
