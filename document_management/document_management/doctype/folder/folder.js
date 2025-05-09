@@ -100,15 +100,15 @@ frappe.ui.form.on('Folder', {
                                     title: __("Actions for file: {0}", [clicked_item_name]),
                                     fields: [
                                         {
-                                            fieldname: 'info',
+                                            fieldname: 'info_html',
                                             fieldtype: 'HTML',
-                                            options: `<p>${__('Selected file:')} <strong>${clicked_item_name}</strong></p><p class="text-muted small">${__('Path:')} ${clicked_item_path}</p>`
-                                        }
-                                    ],
-                                    actions: [
+                                            options: `<p>${__('Selected file:')} <strong>${clicked_item_name}</strong></p><p class="text-muted small mb-3">${__('Path:')} ${clicked_item_path}</p>`
+                                        },
                                         {
+                                            fieldname: 'open_link_btn',
+                                            fieldtype: 'Button',
                                             label: __('Open File Link'),
-                                            cssClass: 'btn-primary',
+                                            btn_class: 'btn-primary',
                                             click: () => {
                                                 frappe.call({
                                                     method: 'document_management.document_management.utils.sharepoint_integration.get_sharepoint_item_details',
@@ -137,6 +137,8 @@ frappe.ui.form.on('Folder', {
                                             }
                                         },
                                         {
+                                            fieldname: 'create_incoming_btn',
+                                            fieldtype: 'Button',
                                             label: __('Create Incoming Document'),
                                             click: () => {
                                                 let base_nd = frm.doc.folder_path || "";
@@ -155,6 +157,8 @@ frappe.ui.form.on('Folder', {
                                             }
                                         },
                                         {
+                                            fieldname: 'create_outgoing_btn',
+                                            fieldtype: 'Button',
                                             label: __('Create Outgoing Document'),
                                             click: () => {
                                                 let base_nd = frm.doc.folder_path || "";
@@ -173,12 +177,15 @@ frappe.ui.form.on('Folder', {
                                             }
                                         },
                                         {
+                                            fieldname: 'cancel_btn',
+                                            fieldtype: 'Button',
                                             label: __('Cancel'),
                                             click: () => {
                                                 file_action_dialog.hide();
                                             }
                                         }
                                     ]
+                                    // No primary_action or actions array here, buttons are defined as fields.
                                 });
                                 file_action_dialog.show();
                             }
