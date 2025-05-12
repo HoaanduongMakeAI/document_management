@@ -56,7 +56,7 @@ frappe.ui.form.on('Folder', {
             }
 
             frappe.call({
-                method: "document_management.utils.sharepoint_integration.list_sharepoint_folder_contents",
+                method: "document_management.document_management.utils.sharepoint_integration.list_sharepoint_folder_contents",
                 args: {
                     folder_docname: current_folder_docname,
                     relative_path: current_sharepoint_path // This is relative to the Folder DocType's root
