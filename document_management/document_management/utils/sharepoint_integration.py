@@ -837,8 +837,9 @@ def download_items(teams_link):
         frappe.local.response.filecontent = file_response.content # Reads full content into memory
         frappe.local.response.type = 'download'
         
-        # This is what the JS callback expects for success
-        return {"message": {"success": True}}
+        # No explicit return here; Frappe handles sending the file content.
+        # The JS callback will not receive a typical JSON response in this success case.
+        return
 
     except frappe.ValidationError as e: # Catch errors from _get_drive_item_from_web_url
         frappe.log_error(f"Validation error during download for link '{teams_link}': {str(e)}", "SharePoint Download")

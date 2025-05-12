@@ -161,23 +161,27 @@ frappe.ui.form.on('Folder', {
                                                                     teams_link: teams_link_for_download
                                                                 },
                                                                 callback: function(r_download) {
-                                                                    if (r_download.message && r_download.message.success) {
-                                                                        frappe.show_alert({ message: __('Download started. Check your browser downloads.'), indicator: 'green', display_length: 5000 });
-                                                                        // The actual download is handled by the browser via content-disposition from server
-                                                                    } else if (r_download.message && r_download.message.error) {
-                                                                        frappe.msgprint({ title: __('Download Error'), indicator: 'red', message: r_download.message.error });
-                                                                    } else if (r_download.exc) {
-                                                                        frappe.msgprint({ title: __('Server Error'), indicator: 'red', message: __('An error occurred while trying to download the file. Check server logs.')});
-                                                                        console.error("Download File Error:", r_download.exc);
-                                                                    } else {
-                                                                        // This case might occur if download_items doesn't return a clear success/error message structure
-                                                                        // but still initiates a download.
-                                                                        frappe.show_alert({ message: __('Download initiated. If it does not start, please check console logs or contact support.'), indicator: 'orange', display_length: 7000 });
-                                                                    }
+                                                                   // When the backend sets response.type = 'download',
+                                                                   // r_download might be undefined or not have a .message property.
+                                                                   // The actual success is the browser initiating the download.
+                                                                   if (r_download && r_download.message && r_download.message.error) {
+                                                                       frappe.msgprint({ title: __('Download Error'), indicator: 'red', message: r_download.message.error });
+                                                                   } else if (r_download && r_download.exc) {
+                                                                       // Handle cases where an exception string is returned
+                                                                       frappe.msgprint({ title: __('Server Error'), indicator: 'red', message: __('An error occurred while trying to download the file. Check server logs.')});
+                                                                       console.error("Download File Error:", r_download.exc);
+                                                                   } else {
+                                                                       // If no explicit error, assume download was initiated.
+                                                                       // The 'Initiating download...' alert is already shown before this frappe.call.
+                                                                       // We can show a more persistent success message here.
+                                                                       frappe.show_alert({ message: __('Download started. Check your browser downloads.'), indicator: 'green', display_length: 7000 });
+                                                                   }
                                                                 },
                                                                 error: function(err_download) {
-                                                                    frappe.msgprint({ title: __('Network Error'), indicator: 'red', message: __('Failed to communicate for file download.')});
-                                                                    console.error("AJAX Error (Download File):", err_download);
+                                                                   // This error typically means the AJAX call itself failed (network issue, 500 error without JSON response etc.)
+                                                                   // not necessarily a logical error from the Python method returning a JSON.
+                                                                   frappe.msgprint({ title: __('Download Request Failed'), indicator: 'red', message: __('Failed to send download request to the server. Check network and server logs.')});
+                                                                   console.error("AJAX Error (Download File):", err_download);
                                                                 }
                                                             });
                                                         } else if (r_item_details_for_download.message && r_item_details_for_download.message.error) {
