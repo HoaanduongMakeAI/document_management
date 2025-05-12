@@ -19,6 +19,8 @@
   "teams_link",
   "upload_to_sharepoint_btn",
   "document_attachment",
+  "file_preview_section",
+  "file_preview",
   "approval_details_section",
   "approval_status",
   "created_by_user",
@@ -112,8 +114,20 @@
    "fieldtype": "Button",
    "label": "Attach File",
    "insert_after": "teams_link"
-  },
-  {
+   },
+   {
+    "fieldname": "file_preview_section",
+    "fieldtype": "Section Break",
+    "label": "File Preview",
+    "insert_after": "upload_to_sharepoint_btn"
+   },
+   {
+    "fieldname": "file_preview",
+    "fieldtype": "HTML",
+    "label": "File Preview",
+    "insert_after": "file_preview_section"
+   },
+   {
    "fieldname": "approval_details_section",
    "fieldtype": "Section Break",
    "label": "Approval Details"

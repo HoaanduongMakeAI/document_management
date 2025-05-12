@@ -322,11 +322,19 @@ frappe.ui.form.on('Incoming Document', {
     },
 
     refresh: function(frm) {
+        // Render file preview on refresh
+        render_file_preview(frm);
+
         if (!frm.is_new()) {
             frm.add_custom_button(__('Attach/Link SharePoint File'), function() { // Changed button label
                 frm.trigger('custom_handle_attach_and_upload');
             }, __('Actions'));
         }
+    },
+
+    teams_link: function(frm) {
+        // Render file preview if teams_link changes
+        render_file_preview(frm);
     },
 
     upload_to_sharepoint_btn: function(frm) { // This button is likely from JSON, ensure its label is also updated or it's removed if custom_button is preferred
@@ -337,3 +345,45 @@ frappe.ui.form.on('Incoming Document', {
         }
     }
 });
+
+function render_file_preview(frm) {
+    if (frm.doc.teams_link && frm.fields_dict.file_preview) {
+        // Ensure the link is a direct viewable link.
+        // For SharePoint, this often means converting a share link to an embeddable link.
+        // For simplicity, we'll assume teams_link is directly embeddable or use a generic approach.
+        // A more robust solution might involve a server-side call to get an embed URL if teams_link is not direct.
+        
+        let embed_url = frm.doc.teams_link;
+        // Basic check if it's a common office file and might need a viewer
+        // SharePoint often provides its own viewer, so direct link might work.
+        // If it's a PDF or image, browsers can often render it directly.
+        // For Office documents, SharePoint links usually open in Office Online.
+
+        // Check if the link needs to be modified for embedding (e.g., SharePoint specific)
+        if (embed_url.includes("sharepoint.com")) {
+            // Attempt to make it more embed-friendly if it's a typical sharing link
+            // This is a common pattern, but might need adjustment based on exact SharePoint link format
+            if (embed_url.includes("?")) {
+                embed_url = embed_url.split("?")[0] + "?embed=true&action=embedview";
+            } else {
+                embed_url = embed_url + "?embed=true&action=embedview";
+            }
+             // A common alternative for SharePoint is to append "&action=embedview" or "&action=view"
+            // Or for some direct links, just ensuring it's the direct file link.
+            // If it's a download link, this won't work well.
+        }
+
+
+        frm.get_field('file_preview').$wrapper.html(
+            `<div style="margin-top: 10px;">
+                <iframe src="${embed_url}" width="100%" height="600px" style="border: 1px solid #ccc;">
+                    <p>${__("Your browser does not support iframes, or the content cannot be displayed.")}
+                       <a href="${frm.doc.teams_link}" target="_blank">${__("Open file directly")}</a>
+                    </p>
+                </iframe>
+            </div>`
+        );
+    } else if (frm.fields_dict.file_preview) {
+        frm.get_field('file_preview').$wrapper.html(`<p class="text-muted">${__("No file link available to preview.")}</p>`);
+    }
+}

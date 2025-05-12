@@ -317,11 +317,19 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
     },
 
     refresh: function(frm) {
+        // Render file preview on refresh
+        render_file_preview(frm);
+
         if (!frm.is_new()) {
             frm.add_custom_button(__('Attach/Link SharePoint File'), function() {
                 frm.trigger('custom_handle_attach_and_upload');
             }, __('Actions'));
         }
+    },
+
+    teams_link: function(frm) {
+        // Render file preview if teams_link changes
+        render_file_preview(frm);
     },
 
     upload_to_sharepoint_btn: function(frm) {
@@ -332,3 +340,29 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
         }
     }
 });
+
+function render_file_preview(frm) {
+    if (frm.doc.teams_link && frm.fields_dict.file_preview) {
+        let embed_url = frm.doc.teams_link;
+        
+        if (embed_url.includes("sharepoint.com")) {
+            if (embed_url.includes("?")) {
+                embed_url = embed_url.split("?")[0] + "?embed=true&action=embedview";
+            } else {
+                embed_url = embed_url + "?embed=true&action=embedview";
+            }
+        }
+
+        frm.get_field('file_preview').$wrapper.html(
+            `<div style="margin-top: 10px;">
+                <iframe src="${embed_url}" width="100%" height="600px" style="border: 1px solid #ccc;">
+                    <p>${__("Your browser does not support iframes, or the content cannot be displayed.")}
+                       <a href="${frm.doc.teams_link}" target="_blank">${__("Open file directly")}</a>
+                    </p>
+                </iframe>
+            </div>`
+        );
+    } else if (frm.fields_dict.file_preview) {
+        frm.get_field('file_preview').$wrapper.html(`<p class="text-muted">${__("No file link available to preview.")}</p>`);
+    }
+}
