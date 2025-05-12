@@ -354,25 +354,20 @@ function render_file_preview(frm) {
         // A more robust solution might involve a server-side call to get an embed URL if teams_link is not direct.
         
         let embed_url = frm.doc.teams_link;
-        // Basic check if it's a common office file and might need a viewer
-        // SharePoint often provides its own viewer, so direct link might work.
-        // If it's a PDF or image, browsers can often render it directly.
-        // For Office documents, SharePoint links usually open in Office Online.
-
-        // Check if the link needs to be modified for embedding (e.g., SharePoint specific)
-        if (embed_url.includes("sharepoint.com")) {
-            // Attempt to make it more embed-friendly if it's a typical sharing link
-            // This is a common pattern, but might need adjustment based on exact SharePoint link format
+        if (embed_url && embed_url.includes("sharepoint.com")) {
             if (embed_url.includes("?")) {
-                embed_url = embed_url.split("?")[0] + "?embed=true&action=embedview";
+                // If there are already params, try to append embed=true&action=embedview
+                // This is a bit naive; a more robust URL param handler might be needed if links are complex
+                if (!embed_url.includes("embed=true")) {
+                    embed_url += "&embed=true";
+                }
+                if (!embed_url.includes("action=embedview")) {
+                     embed_url += "&action=embedview";
+                }
             } else {
                 embed_url = embed_url + "?embed=true&action=embedview";
             }
-             // A common alternative for SharePoint is to append "&action=embedview" or "&action=view"
-            // Or for some direct links, just ensuring it's the direct file link.
-            // If it's a download link, this won't work well.
         }
-
 
         frm.get_field('file_preview').$wrapper.html(
             `<div style="margin-top: 10px;">
@@ -384,9 +379,9 @@ function render_file_preview(frm) {
                 <p class="text-muted small" style="margin-bottom: 10px;">
                     ${__("Attempting to display an embedded preview below. If it remains blank or shows an error, please use the 'Open File in New Tab' button above. Embedding may be restricted by SharePoint's security settings (Content Security Policy).")}
                 </p>
-                <iframe src="${embed_url}" width="100%" height="600px" style="border: 1px solid #ccc;" title="${__('File Preview')}">
-                    <p>${__("Your browser does not support iframes, or the content cannot be displayed.")}</p>
-                </iframe>
+                <embed src="${embed_url}" type="application/pdf" width="100%" height="600px" style="border: 1px solid #ccc;" title="${__('File Preview')}">
+                    <p>${__("Your browser does not support embedded previews, or the content cannot be displayed.")} <a href="${frm.doc.teams_link}" target="_blank">${__("Open file directly")}</a></p>
+                </embed>
             </div>`
         );
     } else if (frm.fields_dict.file_preview) {

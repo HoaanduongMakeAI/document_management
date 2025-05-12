@@ -344,10 +344,16 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
 function render_file_preview(frm) {
     if (frm.doc.teams_link && frm.fields_dict.file_preview) {
         let embed_url = frm.doc.teams_link;
-        
-        if (embed_url.includes("sharepoint.com")) {
+        if (embed_url && embed_url.includes("sharepoint.com")) {
             if (embed_url.includes("?")) {
-                embed_url = embed_url.split("?")[0] + "?embed=true&action=embedview";
+                // If there are already params, try to append embed=true&action=embedview
+                // This is a bit naive; a more robust URL param handler might be needed if links are complex
+                 if (!embed_url.includes("embed=true")) {
+                    embed_url += "&embed=true";
+                }
+                if (!embed_url.includes("action=embedview")) {
+                     embed_url += "&action=embedview";
+                }
             } else {
                 embed_url = embed_url + "?embed=true&action=embedview";
             }
@@ -363,9 +369,9 @@ function render_file_preview(frm) {
                 <p class="text-muted small" style="margin-bottom: 10px;">
                     ${__("Attempting to display an embedded preview below. If it remains blank or shows an error, please use the 'Open File in New Tab' button above. Embedding may be restricted by SharePoint's security settings (Content Security Policy).")}
                 </p>
-                <iframe src="${embed_url}" width="100%" height="600px" style="border: 1px solid #ccc;" title="${__('File Preview')}">
-                    <p>${__("Your browser does not support iframes, or the content cannot be displayed.")}</p>
-                </iframe>
+                <embed src="${embed_url}" type="application/pdf" width="100%" height="600px" style="border: 1px solid #ccc;" title="${__('File Preview')}">
+                    <p>${__("Your browser does not support embedded previews, or the content cannot be displayed.")} <a href="${frm.doc.teams_link}" target="_blank">${__("Open file directly")}</a></p>
+                </embed>
             </div>`
         );
     } else if (frm.fields_dict.file_preview) {
