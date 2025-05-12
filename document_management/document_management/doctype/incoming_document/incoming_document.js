@@ -376,10 +376,16 @@ function render_file_preview(frm) {
 
         frm.get_field('file_preview').$wrapper.html(
             `<div style="margin-top: 10px;">
-                <iframe src="${embed_url}" width="100%" height="600px" style="border: 1px solid #ccc;">
-                    <p>${__("Your browser does not support iframes, or the content cannot be displayed.")}
-                       <a href="${frm.doc.teams_link}" target="_blank">${__("Open file directly")}</a>
-                    </p>
+                <p style="margin-bottom: 10px;">
+                    <a href="${frm.doc.teams_link}" target="_blank" class="btn btn-primary">
+                        <i class="fa fa-external-link-square"></i> ${__("Open File in New Tab")}
+                    </a>
+                </p>
+                <p class="text-muted small" style="margin-bottom: 10px;">
+                    ${__("Attempting to display an embedded preview below. If it remains blank or shows an error, please use the 'Open File in New Tab' button above. Embedding may be restricted by SharePoint's security settings (Content Security Policy).")}
+                </p>
+                <iframe src="${embed_url}" width="100%" height="600px" style="border: 1px solid #ccc;" title="${__('File Preview')}">
+                    <p>${__("Your browser does not support iframes, or the content cannot be displayed.")}</p>
                 </iframe>
             </div>`
         );
