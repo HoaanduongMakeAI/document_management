@@ -376,12 +376,6 @@ function render_file_preview(frm) {
                         <i class="fa fa-external-link-square"></i> ${__("Open File in New Tab")}
                     </a>
                 </p>
-                <p class="text-muted small" style="margin-bottom: 10px;">
-                    ${__("Attempting to display an embedded preview below. If it remains blank or shows an error, please use the 'Open File in New Tab' button above. Embedding may be restricted by SharePoint's security settings (Content Security Policy).")}
-                </p>
-                <embed src="${embed_url}" type="application/pdf" width="100%" height="600px" style="border: 1px solid #ccc;" title="${__('File Preview')}">
-                    <p>${__("Your browser does not support embedded previews, or the content cannot be displayed.")} <a href="${frm.doc.teams_link}" target="_blank">${__("Open file directly")}</a></p>
-                </embed>
             </div>`
         );
     } else if (frm.fields_dict.file_preview) {
