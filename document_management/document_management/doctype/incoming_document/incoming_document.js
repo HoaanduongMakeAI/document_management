@@ -1,19 +1,4 @@
 frappe.ui.form.on('Incoming Document', {
-    onload: function(frm) {
-        if (frappe.route_options) {
-            if (frappe.route_options.custom_teams_link) {
-                frm.set_value('teams_link', frappe.route_options.custom_teams_link);
-            }
-            if (frappe.route_options.custom_path) {
-                frm.set_value('path', frappe.route_options.custom_path);
-            }
-            if (frappe.route_options.custom_folder) {
-                frm.set_value('folder', frappe.route_options.custom_folder);
-            }
-            // Clear route_options after use
-            frappe.route_options = null;
-        }
-    },
     custom_handle_attach_and_upload: function(frm) {
         let current_sharepoint_path = '/'; // Relative path within the selected_folder, always starts at root of selected_folder
         let current_selected_folder_docname = frm.doc.folder || ''; // Base Folder Doctype name
