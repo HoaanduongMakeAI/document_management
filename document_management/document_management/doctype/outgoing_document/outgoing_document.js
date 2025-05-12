@@ -317,8 +317,8 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
     },
 
     refresh: function(frm) {
-        // Render file preview on refresh
-        render_file_preview(frm);
+        // Control visibility of the open_teams_link_btn
+        frm.get_field('open_teams_link_btn').toggle(Boolean(frm.doc.teams_link));
 
         if (!frm.is_new()) {
             frm.add_custom_button(__('Attach/Link SharePoint File'), function() {
@@ -328,8 +328,14 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
     },
 
     teams_link: function(frm) {
-        // Render file preview if teams_link changes
-        render_file_preview(frm);
+        // Control visibility of the open_teams_link_btn when teams_link changes
+        frm.get_field('open_teams_link_btn').toggle(Boolean(frm.doc.teams_link));
+    },
+
+    open_teams_link_btn: function(frm) {
+        if (frm.doc.teams_link) {
+            window.open(frm.doc.teams_link, '_blank');
+        }
     },
 
     upload_to_sharepoint_btn: function(frm) {
@@ -340,35 +346,3 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
         }
     }
 });
-
-function render_file_preview(frm) {
-    if (frm.doc.teams_link && frm.fields_dict.file_preview) {
-        let embed_url = frm.doc.teams_link;
-        if (embed_url && embed_url.includes("sharepoint.com")) {
-            if (embed_url.includes("?")) {
-                // If there are already params, try to append embed=true&action=embedview
-                // This is a bit naive; a more robust URL param handler might be needed if links are complex
-                 if (!embed_url.includes("embed=true")) {
-                    embed_url += "&embed=true";
-                }
-                if (!embed_url.includes("action=embedview")) {
-                     embed_url += "&action=embedview";
-                }
-            } else {
-                embed_url = embed_url + "?embed=true&action=embedview";
-            }
-        }
-
-        frm.get_field('file_preview').$wrapper.html(
-            `<div style="margin-top: 10px;">
-                <p style="margin-bottom: 10px;">
-                    <a href="${frm.doc.teams_link}" target="_blank" class="btn btn-primary">
-                        <i class="fa fa-external-link-square"></i> ${__("Open File in New Tab")}
-                    </a>
-                </p>
-            </div>`
-        );
-    } else if (frm.fields_dict.file_preview) {
-        frm.get_field('file_preview').$wrapper.html(`<p class="text-muted">${__("No file link available to preview.")}</p>`);
-    }
-}

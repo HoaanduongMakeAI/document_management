@@ -16,10 +16,10 @@
   "folder",
   "path",
   "teams_link",
+  "teams_link",
+  "open_teams_link_btn",
   "upload_to_sharepoint_btn",
   "document_attachment",
-  "file_preview_section",
-  "file_preview",
   "processing_details_section",
   "status",
   "assigned_to",
@@ -104,24 +104,18 @@
    "read_only": 1
   },
   {
+   "fieldname": "open_teams_link_btn",
+   "fieldtype": "Button",
+   "label": "Open File in New Tab",
+   "insert_after": "teams_link"
+  },
+  {
    "fieldname": "upload_to_sharepoint_btn",
    "fieldtype": "Button",
    "label": "Attach File",
-   "insert_after": "teams_link"
-   },
-   {
-    "fieldname": "file_preview_section",
-    "fieldtype": "Section Break",
-    "label": "File Preview",
-    "insert_after": "upload_to_sharepoint_btn"
-   },
-   {
-    "fieldname": "file_preview",
-    "fieldtype": "HTML",
-    "label": "File Preview",
-    "insert_after": "file_preview_section"
-   },
-   {
+   "insert_after": "open_teams_link_btn"
+  },
+  {
    "fieldname": "processing_details_section",
    "fieldtype": "Section Break",
    "label": "Processing Details"
