@@ -227,6 +227,7 @@ frappe.ui.form.on('Folder', {
                                                             frappe.throw(__("Could not fetch SharePoint link for the selected file. Document creation aborted. Path: {0}", [clicked_item_path]));
                                                             return; // Stop further execution
                                                         }
+                                                        console.log("Teams Link for Incoming Document:", teams_link); // Debugging line
                                                         frappe.new_doc('Incoming Document', {
                                                             folder: frm.doc.name,
                                                             path: absolute_path_for_new_doc,
@@ -267,6 +268,7 @@ frappe.ui.form.on('Folder', {
                                                             frappe.throw(__("Could not fetch SharePoint link for the selected file. Document creation aborted. Path: {0}", [clicked_item_path]));
                                                             return; // Stop further execution
                                                         }
+                                                        console.log("Teams Link for Outgoing Document:", teams_link); // Debugging line
                                                         frappe.new_doc('Outgoing Document', {
                                                             folder: frm.doc.name,
                                                             path: absolute_path_for_new_doc,
