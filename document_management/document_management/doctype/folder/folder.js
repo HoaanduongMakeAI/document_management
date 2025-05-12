@@ -140,6 +140,7 @@ frappe.ui.form.on('Folder', {
                                             fieldname: 'download_btn',
                                             fieldtype: 'Button',
                                             label: __('Download File'),
+                                            hidden: 1, // Hide the download button
                                             click: () => {
                                                 // First, get the item details to fetch the sharepoint_link (teams_link)
                                                 frappe.show_alert({ message: __('Fetching file details for download...'), indicator: 'info' });
@@ -228,10 +229,13 @@ frappe.ui.form.on('Folder', {
                                                             return; // Stop further execution
                                                         }
                                                         console.log("Teams Link for Incoming Document:", teams_link); // Debugging line
+                                                        frappe.route_options = {
+                                                            "custom_teams_link": teams_link,
+                                                            "custom_path": absolute_path_for_new_doc,
+                                                            "custom_folder": frm.doc.name
+                                                        };
                                                         frappe.new_doc('Incoming Document', {
-                                                            folder: frm.doc.name,
-                                                            path: absolute_path_for_new_doc,
-                                                            teams_link: teams_link
+                                                            // Values will be set by target doctype's onload via route_options
                                                         });
                                                         file_action_dialog.hide();
                                                     },
@@ -269,10 +273,13 @@ frappe.ui.form.on('Folder', {
                                                             return; // Stop further execution
                                                         }
                                                         console.log("Teams Link for Outgoing Document:", teams_link); // Debugging line
+                                                        frappe.route_options = {
+                                                            "custom_teams_link": teams_link,
+                                                            "custom_path": absolute_path_for_new_doc,
+                                                            "custom_folder": frm.doc.name
+                                                        };
                                                         frappe.new_doc('Outgoing Document', {
-                                                            folder: frm.doc.name,
-                                                            path: absolute_path_for_new_doc,
-                                                            teams_link: teams_link
+                                                            // Values will be set by target doctype's onload via route_options
                                                         });
                                                         file_action_dialog.hide();
                                                     },
