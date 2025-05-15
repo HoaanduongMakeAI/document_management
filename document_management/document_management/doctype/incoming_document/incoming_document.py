@@ -91,6 +91,7 @@ class IncomingDocument(Document):
 			},
 			pluck="owner" # The 'owner' field in ToDo is the assigned user
 		)
+		
 
 		if not assigned_users:
 			frappe.log_error(f"No users assigned to Incoming Document: {self.name}", "INCOMING DOCUMENT ASSIGNMENT NOTIFICATION FAILED")
