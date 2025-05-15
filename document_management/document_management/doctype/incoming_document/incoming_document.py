@@ -13,9 +13,16 @@ class IncomingDocument(Document):
 	# before_save hook is removed. Upload logic is now triggered manually via upload_file_via_modal.
 	pass
 
+	def before_save(self):
+		# Store original status before save
+		if self.name: # Check if it's an existing document
+			self._original_status = frappe.db.get_value("Incoming Document", self.name, "status")
+		else: # New document
+			self._original_status = None
+
 	def on_update(self):
 		# Check status changes to trigger notifications
-		if self.status != self.get_original_value("status"):
+		if self.status != self._original_status:
 			if self.status == "Under Review":
 				self.notify_reviewers()
 			elif self.status == "Tasks Assigned":
