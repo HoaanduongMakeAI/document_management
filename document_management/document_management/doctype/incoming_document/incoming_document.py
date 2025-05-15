@@ -32,7 +32,8 @@ class IncomingDocument(Document):
 			},
 			or_filters=[
 				["User role", "role", "=", "System Manager"],
-				["User role", "role", "=", "Document Manager"]
+				["User role", "role", "=", "Document Manager"],
+				["User role", "role", "=", "Văn thư"]
 			],
 			pluck="email"
 		)
@@ -83,15 +84,9 @@ class IncomingDocument(Document):
 		assigned_users = []
 		if self.document_tasks:
 			for task in self.document_tasks:
-				if task.assigned_users:
-					# The assigned_users field in Document Task is a Table MultiSelect,
-					# which stores data as a JSON string of user emails.
-					# We need to parse this JSON string and add the emails to the list.
-					try:
-						task_assigned_users = frappe.parse_json(task.assigned_users)
-						assigned_users.extend(task_assigned_users)
-					except Exception as e:
-						frappe.log_error(f"Error parsing assigned_users for task {task.name}: {e}", "INCOMING DOCUMENT ASSIGNMENT NOTIFICATION FAILED")
+				if task.assignees:
+					for assignee in task.assignees:
+						assigned_users.append(assignee.user)
 
 
 		# Remove duplicates and current user from the list
@@ -128,7 +123,7 @@ class IncomingDocument(Document):
 <ul>
 """
 			for task in self.document_tasks:
-				if task.assigned_users and any(user_email in assigned_users for user_email in frappe.parse_json(task.assigned_users)):
+				if task.assignees and any(assignee.user in assigned_users for assignee in task.assignees):
 					body += f"""
 	<li>
 		<strong>Nội dung:</strong> {task.content}<br>

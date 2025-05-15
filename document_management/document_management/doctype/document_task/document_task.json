@@ -8,7 +8,7 @@
  "engine": "InnoDB",
  "field_order": [
   "content",
-  "assigned_users",
+  "assignees",
   "task_status",
   "due_date"
  ],
@@ -19,10 +19,10 @@
    "label": "Nội dung"
   },
   {
-   "fieldname": "assigned_users",
-   "fieldtype": "Table MultiSelect",
+   "fieldname": "assignees",
+   "fieldtype": "Table",
    "label": "Những người thực hiện",
-   "options": "User"
+   "options": "Document Task Assignee"
   },
   {
    "default": "Open",
