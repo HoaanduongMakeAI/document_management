@@ -119,11 +119,11 @@
    "label": "Processing Details"
   },
   {
-   "default": "Pending",
+   "default": "Open",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Pending\nProcessing\nProcessed\nArchived",
+   "options": "Open\nPending Review\nProcessing\nClosed\nArchived",
    "reqd": 1
   },
   {
