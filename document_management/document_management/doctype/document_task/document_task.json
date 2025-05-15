@@ -1,0 +1,51 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "autoincrement",
+ "creation": "2025-05-15 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": true,
+ "engine": "InnoDB",
+ "field_order": [
+  "content",
+  "assigned_users",
+  "task_status",
+  "due_date"
+ ],
+ "fields": [
+  {
+   "fieldname": "content",
+   "fieldtype": "Text",
+   "label": "Nội dung"
+  },
+  {
+   "fieldname": "assigned_users",
+   "fieldtype": "Table MultiSelect",
+   "label": "Những người thực hiện",
+   "options": "User"
+  },
+  {
+   "default": "Open",
+   "fieldname": "task_status",
+   "fieldtype": "Select",
+   "label": "Trạng thái công việc",
+   "options": "Open\nIn Progress\nCompleted\nCancelled"
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "label": "Deadline"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2025-05-15 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Document Management",
+ "name": "Document Task",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

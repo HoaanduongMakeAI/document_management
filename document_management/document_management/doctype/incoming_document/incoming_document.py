@@ -14,21 +14,17 @@ class IncomingDocument(Document):
 	pass
 
 	def on_update(self):
-		# Check if the status has changed to "Pending Review"
-		# This hook is triggered on save, check for workflow transition to Pending Review
-		if self.has_workflow_permission('Submit for Review') and self.docstatus == 0 and self.status == 'Pending Review':
-			self.notify_reviewers()
+		# Check status changes to trigger notifications
+		if self.has_changed("status"):
+			if self.status == "Under Review":
+				self.notify_reviewers()
+			elif self.status == "Tasks Assigned":
+				self.notify_assigned_users()
 
-	def on_transition(self, workflow_action):
-		# This method is called by the workflow engine on each transition
-		if workflow_action == 'Assign for Processing':
-			self.notify_assigned_users()
-
+	# Keep notify_reviewers method as it contains email logic for reviewers
 
 	def notify_reviewers(self):
-		# Get users with 'Lãnh đạo' or 'Cố vấn' roles
-		# NOTE: Role names 'Lãnh đạo' and 'Cố vấn' are based on the analysis document.
-		# Please adjust if the actual role names in the system are different.
+		# Get users with 'System Manager' or 'Document Manager' roles
 		reviewers = frappe.get_all("User",
 			filters={
 				"user_type": "System User",
@@ -81,24 +77,34 @@ class IncomingDocument(Document):
 
 		frappe.log_error(f"Notification sent for Incoming Document: {self.name} to {', '.join(reviewers)}", "INCOMING DOCUMENT REVIEW NOTIFICATION SENT")
 
+
 	def notify_assigned_users(self):
-		# Get users assigned to this document via the ToDo (Assignment) doctype
-		assigned_users = frappe.get_all("ToDo",
-			filters={
-				"reference_doctype": self.doctype,
-				"reference_name": self.name,
-				"status": "Open" # Only notify for open assignments
-			},
-			pluck="owner" # The 'owner' field in ToDo is the assigned user
-		)
-		
+		# Get users assigned to tasks in the Document Task child table
+		assigned_users = []
+		if self.document_tasks:
+			for task in self.document_tasks:
+				if task.assigned_users:
+					# The assigned_users field in Document Task is a Table MultiSelect,
+					# which stores data as a JSON string of user emails.
+					# We need to parse this JSON string and add the emails to the list.
+					try:
+						task_assigned_users = frappe.parse_json(task.assigned_users)
+						assigned_users.extend(task_assigned_users)
+					except Exception as e:
+						frappe.log_error(f"Error parsing assigned_users for task {task.name}: {e}", "INCOMING DOCUMENT ASSIGNMENT NOTIFICATION FAILED")
+
+
+		# Remove duplicates and current user from the list
+		assigned_users = list(set(assigned_users))
+		if frappe.session.user in assigned_users:
+			assigned_users.remove(frappe.session.user)
 
 		if not assigned_users:
-			frappe.log_error(f"No users assigned to Incoming Document: {self.name}", "INCOMING DOCUMENT ASSIGNMENT NOTIFICATION FAILED")
+			frappe.log_error(f"No users assigned to tasks for Incoming Document: {self.name}", "INCOMING DOCUMENT ASSIGNMENT NOTIFICATION FAILED")
 			return
 
 		# Construct email subject and body
-		subject = f"Bạn có văn bản đến cần xử lý: {self.incoming_number} - {self.subject}"
+		subject = f"Bạn có công việc mới liên quan đến Văn bản đến: {self.incoming_number} - {self.subject}"
 		body = f"""
 <p>Kính gửi Anh/Chị,</p>
 <p>Bạn được giao xử lý văn bản đến sau:</p>
@@ -112,12 +118,29 @@ class IncomingDocument(Document):
 
 		if self.instructions:
 			body += f"""
-<p><strong>Ý kiến chỉ đạo/Hướng dẫn xử lý:</strong></p>
+<p><strong>Ý kiến chỉ đạo chung:</strong></p>
 <p>{self.instructions}</p>
 """
 
+		if self.document_tasks:
+			body += """
+<p><strong>Chi tiết công việc được giao:</strong></p>
+<ul>
+"""
+			for task in self.document_tasks:
+				if task.assigned_users and any(user_email in assigned_users for user_email in frappe.parse_json(task.assigned_users)):
+					body += f"""
+	<li>
+		<strong>Nội dung:</strong> {task.content}<br>
+		<strong>Trạng thái:</strong> {task.task_status}<br>
+		<strong>Deadline:</strong> {task.due_date or 'N/A'}
+	</li>
+"""
+			body += "</ul>"
+
+
 		body += f"""
-<p>Vui lòng truy cập vào hệ thống ERPNext để xem chi tiết và cập nhật tiến độ:</p>
+<p>Vui lòng truy cập vào hệ thống ERPNext để xem chi tiết văn bản và các công việc:</p>
 <p><a href="{frappe.utils.get_url()}/app/incoming-document/{self.name}">Xem Văn bản đến trên ERPNext</a></p>
 """
 

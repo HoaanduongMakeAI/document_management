@@ -243,8 +243,9 @@ app_license = "mit"
 # }
 
 fixtures = [
-	{"doctype": "Workflow"},
-	{"doctype": "Workflow State"},
-	{"doctype": "Workflow Action"}
+	# {"doctype": "Workflow"},
+	# {"doctype": "Workflow State"},
+	# {"doctype": "Workflow Action"}
+	{"doctype": "Document Task"}
 ]
 

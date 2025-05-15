@@ -23,6 +23,7 @@
   "status",
   "due_date",
   "instructions",
+  "document_tasks",
   "versions_section",
   "versions"
  ],
@@ -119,11 +120,11 @@
    "label": "Processing Details"
   },
   {
-   "default": "Open",
+   "default": "New",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Open\nPending Review\nProcessing\nClosed\nArchived",
+   "options": "New\nUnder Review\nTasks Assigned\nIn Progress\nCompleted\nArchived",
    "reqd": 1
   },
   {
@@ -135,6 +136,13 @@
    "fieldname": "instructions",
    "fieldtype": "Text",
    "label": "Instructions"
+  },
+  {
+   "fieldname": "document_tasks",
+   "fieldtype": "Table",
+   "label": "Tasks",
+   "options": "Document Task",
+   "insert_after": "instructions"
   },
   {
    "fieldname": "versions_section",
