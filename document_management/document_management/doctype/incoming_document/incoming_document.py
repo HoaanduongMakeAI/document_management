@@ -91,10 +91,8 @@ class IncomingDocument(Document):
 		assigned_users = []
 		if self.document_tasks:
 			for task in self.document_tasks:
-				if task.assignees:
-					for assignee in task.assignees:
-						assigned_users.append(assignee.user)
-
+				if task.assignee:
+					assigned_users.append(task.assignee)
 
 		# Remove duplicates and current user from the list
 		assigned_users = list(set(assigned_users))
@@ -130,7 +128,7 @@ class IncomingDocument(Document):
 <ul>
 """
 			for task in self.document_tasks:
-				if task.assignees and any(assignee.user in assigned_users for assignee in task.assignees):
+				if task.assignee in assigned_users:
 					body += f"""
 	<li>
 		<strong>Nội dung:</strong> {task.content}<br>

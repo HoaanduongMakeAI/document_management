@@ -19,10 +19,10 @@
    "label": "Nội dung"
   },
   {
-   "fieldname": "assignees",
-   "fieldtype": "Table",
-   "label": "Những người thực hiện",
-   "options": "Document Task Assignee"
+   "fieldname": "assignee",
+   "fieldtype": "Link",
+   "label": "Người thực hiện",
+   "options": "User"
   },
   {
    "default": "Open",
