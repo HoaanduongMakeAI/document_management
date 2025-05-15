@@ -15,7 +15,7 @@ class IncomingDocument(Document):
 
 	def on_update(self):
 		# Check status changes to trigger notifications
-		if self.has_changed("status"):
+		if self.status != self.get_original_value("status"):
 			if self.status == "Under Review":
 				self.notify_reviewers()
 			elif self.status == "Tasks Assigned":
