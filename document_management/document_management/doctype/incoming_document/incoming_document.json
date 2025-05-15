@@ -22,7 +22,6 @@
   "document_attachment",
   "processing_details_section",
   "status",
-  "assigned_to",
   "due_date",
   "instructions",
   "versions_section",
@@ -127,12 +126,6 @@
    "label": "Status",
    "options": "Pending\nProcessing\nProcessed\nArchived",
    "reqd": 1
-  },
-  {
-   "fieldname": "assigned_to",
-   "fieldtype": "Link",
-   "label": "Assigned To",
-   "options": "User"
   },
   {
    "fieldname": "due_date",
