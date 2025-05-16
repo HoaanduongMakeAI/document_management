@@ -120,11 +120,11 @@
    "label": "Processing Details"
   },
   {
-   "default": "New",
+   "default": "Pending",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "New\nUnder Review\nTasks Assigned\nIn Progress\nCompleted\nArchived",
+   "options": "Pending\nUnder Review\nTasks Assigned\nIn Progress\nCompleted\nArchived",
    "reqd": 1
   },
   {

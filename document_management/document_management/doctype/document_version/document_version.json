@@ -24,12 +24,14 @@
   {
    "fieldname": "file_url",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "File URL (ERPNext)",
    "read_only": 1
   },
   {
    "fieldname": "sharepoint_link",
    "fieldtype": "Text",
+   "in_list_view": 1,
    "label": "SharePoint Link",
    "read_only": 1,
    "reqd": 1
@@ -37,12 +39,14 @@
   {
    "fieldname": "action_taken",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Action Taken",
    "read_only": 1
   },
   {
    "fieldname": "action_by",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Action By",
    "options": "User",
    "read_only": 1
@@ -50,6 +54,7 @@
   {
    "fieldname": "action_timestamp",
    "fieldtype": "Datetime",
+   "in_list_view": 1,
    "label": "Action Timestamp",
    "read_only": 1
   }

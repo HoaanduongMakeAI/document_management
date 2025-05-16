@@ -16,25 +16,29 @@
   {
    "fieldname": "content",
    "fieldtype": "Text",
-   "label": "Nội dung"
+   "label": "Content",
+   "in_list_view": 1
   },
   {
    "fieldname": "assignee",
    "fieldtype": "Link",
-   "label": "Người thực hiện",
-   "options": "User"
+   "label": "Assignee",
+   "options": "User",
+   "in_list_view": 1
   },
   {
    "default": "Open",
    "fieldname": "task_status",
    "fieldtype": "Select",
-   "label": "Trạng thái công việc",
-   "options": "Open\nIn Progress\nCompleted\nCancelled"
+   "label": "Task Status",
+   "options": "Open\nIn Progress\nCompleted\nCancelled",
+   "in_list_view": 1
   },
   {
    "fieldname": "due_date",
    "fieldtype": "Date",
-   "label": "Deadline"
+   "label": "Due Date",
+   "in_list_view": 1
   }
  ],
  "istable": 1,
