@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+import frappe.copy
 from frappe.model.document import Document
 from frappe.utils import strip_html, get_abbr
 
@@ -18,7 +19,7 @@ class IncomingDocument(Document):
 		if self.name: # Check if it's an existing document
 			self._original_status = frappe.db.get_value("Incoming Document", self.name, "status")
 			# Store original document tasks before save
-			self._original_document_tasks = {d.name: d.as_dict() for d in frappe.get_all("Document Task", filters={"parent": self.name}, fields=["*"])}
+			self._original_document_tasks = frappe.copy.deepcopy(self.document_tasks)
 		else: # New document
 			self._original_status = None
 			self._original_document_tasks = {}
