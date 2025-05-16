@@ -116,7 +116,7 @@
   },
   {
    "fieldname": "processing_details_section",
-   "fieldtype": "Section Break",
+   "fieldtype": "Tab Break",
    "label": "Processing Details"
   },
   {
@@ -146,7 +146,7 @@
   },
   {
    "fieldname": "versions_section",
-   "fieldtype": "Section Break",
+   "fieldtype": "Tab Break",
    "label": "Document Versions"
   },
   {

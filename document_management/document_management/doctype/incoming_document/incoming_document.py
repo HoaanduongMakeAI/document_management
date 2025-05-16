@@ -92,7 +92,7 @@ class IncomingDocument(Document):
 		body += """
 </ul>
 <p>Vui lòng truy cập vào hệ thống ERPNext để xem chi tiết văn bản và các công việc:</p>
-<p><a href="{frappe.utils.get_url()}/app/incoming-document/{self.name}">Xem Văn bản đến trên ERPNext</a></p>
+<p><a href="/app/incoming-document/{self.name}">Xem Văn bản đến trên ERPNext</a></p>
 """
 		if self.teams_link:
 			body += f"""
@@ -149,7 +149,7 @@ class IncomingDocument(Document):
 	<li><strong>Ngày đến:</strong> {self.date_received}</li>
 </ul>
 <p>Vui lòng truy cập vào hệ thống ERPNext để xem chi tiết và đưa ra ý kiến chỉ đạo:</p>
-<p><a href="{frappe.utils.get_url()}/app/incoming-document/{self.name}">Xem Văn bản đến trên ERPNext</a></p>
+<p><a href="/app/incoming-document/{self.name}">Xem Văn bản đến trên ERPNext</a></p>
 """
 
 		if self.teams_link:
@@ -229,7 +229,7 @@ class IncomingDocument(Document):
 
 		body += f"""
 <p>Vui lòng truy cập vào hệ thống ERPNext để xem chi tiết văn bản và các công việc:</p>
-<p><a href="{frappe.utils.get_url()}/app/incoming-document/{self.name}">Xem Văn bản đến trên ERPNext</a></p>
+<p><a href="/app/incoming-document/{self.name}">Xem Văn bản đến trên ERPNext</a></p>
 """
 
 		if self.teams_link:
