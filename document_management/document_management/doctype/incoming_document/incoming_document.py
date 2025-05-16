@@ -12,7 +12,6 @@ from document_management.document_management.utils.sharepoint_integration import
 class IncomingDocument(Document):
 	# autoname is now handled by Naming Series in JSON
 	# before_save hook is removed. Upload logic is now triggered manually via upload_file_via_modal.
-	pass
 
 	def before_save(self):
 		# Store original status before save
