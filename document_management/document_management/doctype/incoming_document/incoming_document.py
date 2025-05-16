@@ -17,7 +17,7 @@ class IncomingDocument(Document):
 		if self.name: # Check if it's an existing document
 			self._original_status = frappe.db.get_value("Incoming Document", self.name, "status")
 			# Store original document tasks before save
-			self._original_document_tasks = {d.name:d for d in self.document_tasks}
+			self._original_document_tasks = {d.name: d.as_dict() for d in self._original_document_tasks}
 			frappe.msgprint(self._original_document_tasks)
 		else: # New document
 			self._original_status = None
@@ -32,7 +32,7 @@ class IncomingDocument(Document):
 				self.notify_assigned_users()
 
 		# Check for changes in document tasks and group by assignee
-		original_tasks_dict = {d.name: d.as_dict() for d in self._original_document_tasks} if hasattr(self, '_original_document_tasks') and self._original_document_tasks else {}
+		original_tasks_dict = self._original_document_tasks if hasattr(self, '_original_document_tasks') and self._original_document_tasks else {}
 		current_tasks_dict = {d.name: d.as_dict() for d in self.document_tasks}
 
 		frappe.msgprint(f"Original tasks dict: {original_tasks_dict}")
