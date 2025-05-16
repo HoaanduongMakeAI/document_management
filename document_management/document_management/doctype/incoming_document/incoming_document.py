@@ -18,7 +18,7 @@ class IncomingDocument(Document):
 			self._original_status = frappe.db.get_value("Incoming Document", self.name, "status")
 			# Store original document tasks before save
 			self._original_document_tasks = {d.name: d.as_dict() for d in self.document_tasks}
-			frappe.msgprint(self._original_document_tasks)
+			# frappe.msgprint(self._original_document_tasks)
 		else: # New document
 			self._original_status = None
 			self._original_document_tasks = {}
