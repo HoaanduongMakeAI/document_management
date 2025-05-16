@@ -35,9 +35,6 @@ class IncomingDocument(Document):
 		original_tasks_dict = {d.name: d.as_dict() for d in self._original_document_tasks} if hasattr(self, '_original_document_tasks') and self._original_document_tasks else {}
 		current_tasks_dict = {d.name: d.as_dict() for d in self.document_tasks}
 
-		frappe.msgprint(f"Original tasks dict: {original_tasks_dict}")
-		frappe.msgprint(f"Current tasks dict: {current_tasks_dict}")
-
 		tasks_to_notify = {} # {assignee: [{task_details, change_type}]}
 
 		# Check for new or modified tasks
@@ -62,8 +59,10 @@ class IncomingDocument(Document):
 					tasks_to_notify[current_task["assignee"]] = []
 				tasks_to_notify[current_task["assignee"]].append({"task": frappe._dict(current_task), "change_type": change_type})
 
+		print(tasks_to_notify)
 		# Send consolidated email to each assignee
 		for assignee, tasks in tasks_to_notify.items():
+			
 			self.notify_assignee_tasks_change(assignee, tasks)
 
 	def notify_assignee_tasks_change(self, assignee, tasks):
