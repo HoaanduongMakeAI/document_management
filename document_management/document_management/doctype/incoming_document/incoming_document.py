@@ -89,7 +89,7 @@ class IncomingDocument(Document):
 		<strong>Deadline:</strong> {task.due_date or 'N/A'}
 	</li>
 """
-		body += """
+		body += f"""
 </ul>
 <p>Vui lòng truy cập vào hệ thống ERPNext để xem chi tiết văn bản và các công việc:</p>
 <p><a href="/app/incoming-document/{self.name}">Xem Văn bản đến trên ERPNext</a></p>
