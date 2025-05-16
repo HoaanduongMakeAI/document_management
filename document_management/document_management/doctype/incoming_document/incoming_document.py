@@ -17,8 +17,11 @@ class IncomingDocument(Document):
 		# Store original status before save
 		if self.name: # Check if it's an existing document
 			self._original_status = frappe.db.get_value("Incoming Document", self.name, "status")
+			# Store original document tasks before save
+			self._original_document_tasks = {d.name: d.as_dict() for d in frappe.get_all("Document Task", filters={"parent": self.name}, as_list=0)}
 		else: # New document
 			self._original_status = None
+			self._original_document_tasks = {}
 
 	def on_update(self):
 		# Check status changes to trigger notifications
@@ -27,6 +30,86 @@ class IncomingDocument(Document):
 				self.notify_reviewers()
 			elif self.status == "Tasks Assigned":
 				self.notify_assigned_users()
+
+		# Check for changes in document tasks and group by assignee
+		original_tasks_dict = self._original_document_tasks if hasattr(self, '_original_document_tasks') else {}
+		current_tasks_dict = {d.name: d.as_dict() for d in self.document_tasks}
+
+		tasks_to_notify = {} # {assignee: [{task_details, change_type}]}
+
+		# Check for new or modified tasks
+		for task_name, current_task in current_tasks_dict.items():
+			original_task = original_tasks_dict.get(task_name)
+			change_type = None
+
+			if original_task is None:
+				# New task
+				change_type = "New"
+			else:
+				# Existing task, check for modifications
+				# Compare relevant fields: content, assignee, task_status, due_date
+				if (current_task.get("content") != original_task.get("content") or
+					current_task.get("assignee") != original_task.get("assignee") or
+					current_task.get("task_status") != original_task.get("task_status") or
+					str(current_task.get("due_date")) != str(original_task.get("due_date"))): # Compare dates as strings
+					change_type = "Updated"
+
+			if change_type and current_task.get("assignee"):
+				if current_task["assignee"] not in tasks_to_notify:
+					tasks_to_notify[current_task["assignee"]] = []
+				tasks_to_notify[current_task["assignee"]].append({"task": frappe._dict(current_task), "change_type": change_type})
+
+		# Send consolidated email to each assignee
+		for assignee, tasks in tasks_to_notify.items():
+			self.notify_assignee_tasks_change(assignee, tasks)
+
+	def notify_assignee_tasks_change(self, assignee, tasks):
+		if not tasks:
+			return
+
+		subject = f"Cập nhật công việc liên quan đến Văn bản đến: {self.incoming_number} - {self.subject}"
+		body = f"""
+<p>Kính gửi Anh/Chị,</p>
+<p>Có cập nhật công việc liên quan đến văn bản đến "{self.incoming_number} - {self.subject}":</p>
+<ul>
+"""
+		for item in tasks:
+			task = item["task"]
+			change_type = item["change_type"]
+			body += f"""
+	<li>
+		<strong>Loại thay đổi:</strong> {change_type}<br>
+		<strong>Nội dung:</strong> {task.content}<br>
+		<strong>Trạng thái:</strong> {task.task_status}<br>
+		<strong>Deadline:</strong> {task.due_date or 'N/A'}
+	</li>
+"""
+		body += """
+</ul>
+<p>Vui lòng truy cập vào hệ thống ERPNext để xem chi tiết văn bản và các công việc:</p>
+<p><a href="{frappe.utils.get_url()}/app/incoming-document/{self.name}">Xem Văn bản đến trên ERPNext</a></p>
+"""
+		if self.teams_link:
+			body += f"""
+<p>File văn bản gốc có thể xem tại đây:</p>
+<p><a href="{self.teams_link}">Xem File trên Microsoft Teams</a></p>
+"""
+
+		body += """
+<p>Trân trọng,</p>
+<p>Hệ thống ERPNext</p>
+"""
+
+		try:
+			frappe.sendmail(
+				recipients=[assignee],
+				subject=subject,
+				message=body,
+				now=True # Send immediately
+			)
+			frappe.log_error(f"Consolidated task change notification sent for Incoming Document: {self.name} to {assignee}", "INCOMING DOCUMENT CONSOLIDATED TASK NOTIFICATION SENT")
+		except Exception as e:
+			frappe.log_error(f"Failed to send consolidated task change notification for Incoming Document: {self.name} to {assignee}: {e}", f"INCOMING DOCUMENT CONSOLIDATED TASK NOTIFICATION FAILED")
 
 	# Keep notify_reviewers method as it contains email logic for reviewers
 
