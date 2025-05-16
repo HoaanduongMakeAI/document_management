@@ -32,7 +32,7 @@ class IncomingDocument(Document):
 				self.notify_assigned_users()
 
 		# Check for changes in document tasks and group by assignee
-		original_tasks_dict = self._original_document_tasks if hasattr(self, '_original_document_tasks') else {}
+		original_tasks_dict = {d.name: d.as_dict() for d in self._original_document_tasks} if hasattr(self, '_original_document_tasks') and self._original_document_tasks else {}
 		current_tasks_dict = {d.name: d.as_dict() for d in self.document_tasks}
 
 		tasks_to_notify = {} # {assignee: [{task_details, change_type}]}
