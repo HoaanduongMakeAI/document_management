@@ -16,12 +16,13 @@ class IncomingDocument(Document):
 		# Store original status before save
 		if self.name: # Check if it's an existing document
 			self._original_status = frappe.db.get_value("Incoming Document", self.name, "status")
-			# Store original document tasks before save
-			self._original_document_tasks = {d.name: d.as_dict() for d in frappe.db.get_value("Incoming Document", self.name, "document_tasks")}
-			frappe.msgprint(f"Original tasks dict: {self._original_document_tasks}")
+			# Fetch and store original document tasks as a dictionary
+			original_tasks = frappe.get_all("Document Task", filters={"parent": self.name}, fields=["*"])
+			self._original_tasks_dict = {d.name: d for d in original_tasks} # Create dictionary for easy lookup
+			frappe.msgprint(f"Original tasks dict (before_save): {self._original_tasks_dict}")
 		else: # New document
 			self._original_status = None
-			self._original_document_tasks = {}
+			self._original_tasks_dict = {}
 
 	def on_update(self):
 		# Check status changes to trigger notifications
@@ -32,11 +33,11 @@ class IncomingDocument(Document):
 				self.notify_assigned_users()
 
 		# Check for changes in document tasks and group by assignee
-		original_tasks_dict = self._original_document_tasks if hasattr(self, '_original_document_tasks') and self._original_document_tasks else {}
+		original_tasks_dict = self._original_tasks_dict if hasattr(self, '_original_tasks_dict') and self._original_tasks_dict else {}
 		current_tasks_dict = {d.name: d.as_dict() for d in self.document_tasks}
 
-		frappe.msgprint(f"Original tasks dict: {original_tasks_dict}")
-		frappe.msgprint(f"Current tasks dict: {current_tasks_dict}")
+		frappe.msgprint(f"Original tasks dict (on_update): {original_tasks_dict}")
+		frappe.msgprint(f"Current tasks dict (on_update): {current_tasks_dict}")
 
 		tasks_to_notify = {} # {assignee: [{task_details, change_type}]}
 
