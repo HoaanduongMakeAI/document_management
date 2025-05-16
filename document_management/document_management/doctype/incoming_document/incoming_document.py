@@ -18,7 +18,7 @@ class IncomingDocument(Document):
 		if self.name: # Check if it's an existing document
 			self._original_status = frappe.db.get_value("Incoming Document", self.name, "status")
 			# Store original document tasks before save
-			self._original_document_tasks = {d.name: d.as_dict() for d in frappe.get_all("Document Task", filters={"parent": self.name}, as_list=0)}
+			self._original_document_tasks = {d.name: d.as_dict() for d in frappe.get_all("Document Task", filters={"parent": self.name}, fields=["*"])}
 		else: # New document
 			self._original_status = None
 			self._original_document_tasks = {}
