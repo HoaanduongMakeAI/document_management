@@ -4,6 +4,7 @@
 import frappe
 from frappe.model.document import Document
 from frappe.utils import strip_html, get_abbr
+from frappe.desk.form.assign_to import add
 
 # Import the upload function - Adjust path due to directory move
 from document_management.document_management.utils.sharepoint_integration import upload_file_to_sharepoint, get_sharepoint_version_from_link
@@ -91,10 +92,19 @@ class IncomingDocument(Document):
 		for task in self.document_tasks:
 			if task.assignee and task.assignee not in current_assignees:
 				try:
-					frappe.share.add_assignee(self.doctype, self.name, task.assignee)
+					args = {
+						'assign_to': [task.assignee],
+						'doctype': self.doctype,
+						'name': self.name,
+						'description': f"Công việc liên quan đến Văn bản đến: {self.incoming_number} - {self.subject}",
+					}
+					add(args, ignore_permissions=True)
 					frappe.log_error(f"Added assignee {task.assignee} to Incoming Document: {self.name}", "INCOMING DOCUMENT ASSIGNEE ADDED")
 				except Exception as e:
 					frappe.throw(f"Failed to add assignee {task.assignee} to Incoming Document: {self.name}: {e}", "INCOMING DOCUMENT ASSIGNEE ADD FAILED")
+					# Decide if we should throw an exception or just log the error.
+					# For now, just log the error and continue with other tasks.
+					# frappe.throw(f"Failed to add assignee {task.assignee} to Incoming Document: {self.name}: {e}")
 
 
 		# Send consolidated email to each assignee
