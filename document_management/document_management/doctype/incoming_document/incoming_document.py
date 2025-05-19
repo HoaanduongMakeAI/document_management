@@ -24,7 +24,7 @@ class IncomingDocument(Document):
 			original_versions = frappe.get_all("Document Version", filters={"parent": self.name}, fields=["*"])
 			self._original_versions_dict = {v.name: v for v in original_versions} # Create dictionary for easy lookup
 			frappe.msgprint(f"Original tasks dict (before_save): {self._original_tasks_dict}")
-			frappe.msgprint(f"Original versions dict (before_save): {self._original_versions_dict}")
+			# frappe.msgprint(f"Original versions dict (before_save): {self._original_versions_dict}")
 		else: # New document
 			self._original_status = None
 			self._original_tasks_dict = {}
@@ -275,6 +275,68 @@ class IncomingDocument(Document):
 
 		frappe.log_error(f"Assignment notification sent for Incoming Document: {self.name} to {', '.join(assigned_users)}", "INCOMING DOCUMENT ASSIGNMENT NOTIFICATION SENT")
 
+
+
+	def notify_version_added(self, version_data):
+		"""
+		Sends email notifications to assigned users when a new document version is added.
+		"""
+		# Get users assigned to tasks in the Document Task child table
+		assigned_users = []
+		if self.document_tasks:
+			for task in self.document_tasks:
+				if task.assignee:
+					assigned_users.append(task.assignee)
+
+		# Remove duplicates and current user from the list
+		assigned_users = list(set(assigned_users))
+		if frappe.session.user in assigned_users:
+			assigned_users.remove(frappe.session.user)
+
+		if not assigned_users:
+			frappe.log_error(f"No users assigned to tasks for Incoming Document: {self.name} to notify about new version.", "INCOMING DOCUMENT VERSION NOTIFICATION FAILED")
+			return
+
+		# Construct email subject and body
+		subject = f"Cập nhật phiên bản mới cho Văn bản đến: {self.incoming_number} - {self.subject}"
+		body = f"""
+<p>Kính gửi Anh/Chị,</p>
+<p>Văn bản đến "{self.incoming_number} - {self.subject}" đã có phiên bản mới:</p>
+<ul>
+	<li><strong>Phiên bản:</strong> {version_data.version_number}</li>
+	<li><strong>Hành động:</strong> {version_data.action_taken}</li>
+	<li><strong>Thời gian:</strong> {version_data.action_timestamp}</li>
+	<li><strong>Người thực hiện:</strong> {version_data.action_by}</li>
+</ul>
+"""
+
+		if version_data.sharepoint_link:
+			body += f"""
+<p>File phiên bản mới có thể xem tại đây:</p>
+<p><a href="{version_data.sharepoint_link}">Xem File trên Microsoft Teams</a></p>
+"""
+
+		body += f"""
+<p>Vui lòng truy cập vào hệ thống ERPNext để xem chi tiết văn bản và lịch sử phiên bản:</p>
+<p><a href="/app/incoming-document/{self.name}">Xem Văn bản đến trên ERPNext</a></p>
+"""
+
+		body += """
+<p>Trân trọng,</p>
+<p>Hệ thống ERPNext</p>
+"""
+
+		# Send email
+		try:
+			frappe.sendmail(
+				recipients=assigned_users,
+				subject=subject,
+				message=body,
+				now=True # Send immediately
+			)
+			frappe.log_error(f"New version notification sent for Incoming Document: {self.name} to {', '.join(assigned_users)}", "INCOMING DOCUMENT VERSION NOTIFICATION SENT")
+		except Exception as e:
+			frappe.log_error(f"Failed to send new version notification for Incoming Document: {self.name} to {', '.join(assigned_users)}: {e}", "INCOMING DOCUMENT VERSION NOTIFICATION FAILED")
 
 
 	@frappe.whitelist()

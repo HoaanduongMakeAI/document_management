@@ -142,6 +142,7 @@ frappe.ui.form.on('Incoming Document', {
                                         } else {
                                             frappe.msgprint({ title: __('Upload Issue'), indicator: 'orange', message: __('Upload completed but no link/path was returned.')});
                                         }
+                                        
                                     },
                                     error: function(err_upload) {
                                         frappe.msgprint({ title: __('Network Error'), indicator: 'red', message: __('Failed to communicate for SharePoint upload.')});
