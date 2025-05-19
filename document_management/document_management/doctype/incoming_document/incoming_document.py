@@ -338,5 +338,54 @@ class IncomingDocument(Document):
 		except Exception as e:
 			frappe.log_error(f"Failed to trigger assigned users notification for Incoming Document: {self.name}: {e}", "INCOMING DOCUMENT NOTIFICATION FAILED")
 
+	@frappe.whitelist()
+	def create_document_version_entry(self, action_taken):
+		"""
+		Creates a new Document Version entry.
+		This method is called from client-side or other server-side logic
+		when a new version needs to be recorded (e.g., file upload, teams link change).
+		"""
+		if not self.teams_link:
+			frappe.log_warning(f"Cannot create document version entry for {self.name}: teams_link is empty.", "INCOMING DOCUMENT VERSIONING")
+			return
+
+		sharepoint_version = None
+		try:
+			# Fetch Sharepoint version using the teams_link
+			sharepoint_version = get_sharepoint_version_from_link(self.teams_link)
+			if not sharepoint_version:
+				frappe.log_warning(f"Could not fetch Sharepoint version for link: {self.teams_link}", "INCOMING DOCUMENT VERSIONING")
+				# Continue without Sharepoint version if fetching fails
+		except Exception as e:
+			frappe.log_error(f"Error fetching Sharepoint version for link {self.teams_link}: {e}", "INCOMING DOCUMENT VERSIONING")
+			# Continue without Sharepoint version if fetching fails
+
+		# Determine the next version number
+		current_version_count = len(self.get("versions", []))
+		next_version_number = current_version_count + 1
+
+		# Create a new Document Version entry
+		new_version = self.append("versions", {
+			"version_number": next_version_number,
+			"sharepoint_link": self.teams_link, # Use the current teams_link
+			"action_taken": action_taken,
+			"action_by": frappe.session.user,
+			"action_timestamp": frappe.utils.now_datetime(),
+			"sharepoint_version": sharepoint_version # Save the fetched Sharepoint version
+			# file_url is not needed here as the file is on Sharepoint
+		})
+
+		# Save the document to persist the new child table row
+		# Use ignore_permissions=True as this is a system-triggered update
+		try:
+			self.save(ignore_permissions=True)
+			frappe.log_error(f"Created Document Version {new_version.name} for Incoming Document: {self.name}", "INCOMING DOCUMENT VERSION CREATED")
+		except Exception as e:
+			frappe.log_error(f"Failed to save Incoming Document {self.name} after creating version: {e}", "INCOMING DOCUMENT VERSION SAVE FAILED")
+			# It's better to stop if the version wasn't saved.
+			frappe.throw(f"Failed to save document after creating version: {e}")
+
+# Keep notify_reviewers method as it contains email logic for reviewers
+# Keep notify_assigned_users method as it contains email logic for task assignments
 # Whitelisted functions moved to utils/sharepoint_integration.py
 		
