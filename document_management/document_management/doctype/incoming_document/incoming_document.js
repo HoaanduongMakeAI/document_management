@@ -136,9 +136,9 @@ frappe.ui.form.on('Incoming Document', {
 
                                             // Call the Python method to create a document version
                                             frappe.call({
-                                                method: 'document_management.document_management.doctype.incoming_document.incoming_document.create_document_version_and_notify',
+                                                doc: frm.doc,
+                                                method: 'create_document_version_and_notify',
                                                 args: {
-                                                    docname: frm.doc.name,
                                                     action_taken: 'File Uploaded' // Or a more specific message if needed
                                                 },
                                                 callback: function(r_version) {
