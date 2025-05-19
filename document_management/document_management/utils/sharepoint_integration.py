@@ -812,7 +812,7 @@ def get_sharepoint_version_from_link(teams_link):
         response = requests.get(versions_url, headers=headers)
         response.raise_for_status() # Ensure the request was successful
 
-        frappe.msgprint(response.json())
+        frappe.msgprint(f"{response.json()}")
         versions_data = response.json().get("value", [])
 
         if not versions_data:
