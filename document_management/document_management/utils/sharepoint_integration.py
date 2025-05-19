@@ -689,8 +689,18 @@ def upload_file_to_path(doctype, docname, file_doc_name, target_folder_docname, 
         doc.set("path", absolute_file_path_on_sp) # New field
         doc.set("folder", target_folder_docname) # Set the folder field to the one used for upload
         
+        # Fetch Sharepoint version
+        sharepoint_version = None
+        try:
+            sharepoint_version = get_sharepoint_version_from_link(sharepoint_link)
+            if not sharepoint_version:
+                frappe.log_warning(f"Could not fetch Sharepoint version for link: {sharepoint_link}", "SharePoint Upload to Path Versioning")
+        except Exception as e:
+            frappe.log_error(f"Error fetching Sharepoint version for link {sharepoint_link}: {e}", "SharePoint Upload to Path Versioning")
+            # Continue without Sharepoint version if fetching fails
+
         # Create a version entry (similar to upload_file_to_sharepoint)
-        action_details = { "action": "Upload to Path", "user": frappe.session.user }
+        action_details = { "action": "File Uploaded via Modal", "user": frappe.session.user } # More specific action
         current_version_count = len(doc.get("versions", []))
         next_version_number = current_version_count + 1
         new_version = doc.append("versions", {
@@ -700,9 +710,19 @@ def upload_file_to_path(doctype, docname, file_doc_name, target_folder_docname, 
             "action_by": action_details.get("user"),
             "action_timestamp": frappe.utils.now_datetime(),
             "file_url": file_doc.file_url if doc.get("store_locally") else None,
-            "path": absolute_file_path_on_sp # Store path in version too
+            "path": absolute_file_path_on_sp, # Store path in version too
+            "sharepoint_version": sharepoint_version # Add Sharepoint version
         })
         doc.save(ignore_permissions=True) # Save to persist changes and new version
+
+        # Trigger notifications after saving
+        try:
+            # Assuming notify_assigned_users is the relevant notification for file upload
+            # It's defined in incoming_document.py, so call it on the doc object
+            doc.notify_assigned_users()
+        except Exception as e:
+            frappe.throw(f"Failed to trigger assigned users notification for Incoming Document: {doc.name} after file upload: {e}")
+
 
         if not doc.get("store_locally"):
             try:

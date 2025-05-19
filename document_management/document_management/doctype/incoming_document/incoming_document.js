@@ -133,33 +133,7 @@ frappe.ui.form.on('Incoming Document', {
                                             frm.set_value('path', r_upload.message.absolute_path);
                                             frm.set_value('folder', target_folder_docname_for_action);
                                             frappe.show_alert({ message: __('File successfully uploaded and linked. Creating document version...'), indicator: 'info' });
-
-                                            // Call the Python method to create a document version
-                                            frappe.call({
-                                                doc: frm.doc,
-                                                method: 'create_document_version_and_notify',
-                                                args: {
-                                                    action_taken: 'File Uploaded' // Or a more specific message if needed
-                                                },
-                                                callback: function(r_version) {
-                                                    if (r_version.message) {
-                                                        frappe.show_alert({ message: __('Document version created successfully. Please save the document.'), indicator: 'green' });
-                                                    } else if (r_version.exc) {
-                                                        frappe.msgprint({ title: __('Version Creation Error'), indicator: 'red', message: __('An error occurred while creating document version. Check server logs.')});
-                                                        console.error("Document Version Creation Error:", r_version.exc);
-                                                    } else {
-                                                        frappe.msgprint({ title: __('Version Creation Issue'), indicator: 'orange', message: __('Version creation call completed but no confirmation received.')});
-                                                    }
-                                                    // User should save manually after mandatory fields are filled.
-                                                    dialog.hide();
-                                                },
-                                                error: function(err_version) {
-                                                    frappe.msgprint({ title: __('Network Error'), indicator: 'red', message: __('Failed to communicate for document version creation.')});
-                                                    console.error("AJAX Error (Version Creation):", err_version);
-                                                    dialog.hide(); // Hide dialog even on error
-                                                }
-                                            });
-
+                                            dialog.hide();
                                         } else if (r_upload.message && r_upload.message.error) {
                                             frappe.msgprint({ title: __('Upload Error'), indicator: 'red', message: r_upload.message.error });
                                         } else if (r_upload.exc) {
