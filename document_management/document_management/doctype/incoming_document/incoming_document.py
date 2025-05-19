@@ -86,6 +86,17 @@ class IncomingDocument(Document):
 				tasks_to_notify[current_task["assignee"]].append({"task": frappe._dict(current_task), "change_type": change_type})
 		print(tasks_to_notify)
 
+		# Add assignees from document tasks to the document's "Assign To"
+		current_assignees = [d.owner for d in frappe.get_all("ToDo", filters={"reference_name": self.name, "reference_type": self.doctype}, fields=["owner"])]
+		for task in self.document_tasks:
+			if task.assignee and task.assignee not in current_assignees:
+				try:
+					frappe.share.add_assignee(self.doctype, self.name, task.assignee)
+					frappe.log_error(f"Added assignee {task.assignee} to Incoming Document: {self.name}", "INCOMING DOCUMENT ASSIGNEE ADDED")
+				except Exception as e:
+					frappe.log_error(f"Failed to add assignee {task.assignee} to Incoming Document: {self.name}: {e}", "INCOMING DOCUMENT ASSIGNEE ADD FAILED")
+
+
 		# Send consolidated email to each assignee
 		for assignee, tasks in tasks_to_notify.items():
 			self.notify_assignee_tasks_change(assignee, tasks)
