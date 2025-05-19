@@ -133,7 +133,7 @@ frappe.ui.form.on('Incoming Document', {
                                             frm.set_value('path', r_upload.message.absolute_path);
                                             frm.set_value('folder', target_folder_docname_for_action);
                                             frappe.show_alert({ message: __('File successfully uploaded and linked. Creating document version...'), indicator: 'info' });
-                                            dialog.hide();
+                                            
                                         } else if (r_upload.message && r_upload.message.error) {
                                             frappe.msgprint({ title: __('Upload Error'), indicator: 'red', message: r_upload.message.error });
                                         } else if (r_upload.exc) {
@@ -142,11 +142,12 @@ frappe.ui.form.on('Incoming Document', {
                                         } else {
                                             frappe.msgprint({ title: __('Upload Issue'), indicator: 'orange', message: __('Upload completed but no link/path was returned.')});
                                         }
-                                        
+                                        dialog.hide();
                                     },
                                     error: function(err_upload) {
                                         frappe.msgprint({ title: __('Network Error'), indicator: 'red', message: __('Failed to communicate for SharePoint upload.')});
                                         console.error("AJAX Error (Upload):", err_upload);
+                                        dialog.hide();
                                     }
                                 });
                             } else if (r_file_doc.exc) {
