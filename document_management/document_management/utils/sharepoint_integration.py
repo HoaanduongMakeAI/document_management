@@ -721,7 +721,7 @@ def upload_file_to_path(doctype, docname, file_doc_name, target_folder_docname, 
             # It's defined in incoming_document.py, so call it on the doc object
             doc.notify_assigned_users()
         except Exception as e:
-            frappe.show_alert({ "message": f"Failed to trigger assigned users notification for Incoming Document: {doc.name} after file upload: {e}", "indicator": 'error' })
+            frappe.msgprint(f"Failed to trigger assigned users notification for Incoming Document: {doc.name} after file upload: {e}")
 
         if not doc.get("store_locally"):
             try:
