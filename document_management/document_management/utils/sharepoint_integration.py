@@ -811,26 +811,8 @@ def get_sharepoint_version_from_link(teams_link):
         # Fetch the versions
         response = requests.get(versions_url, headers=headers)
         response.raise_for_status() # Ensure the request was successful
-
-        frappe.msgprint(f"{response.json()}")
-        versions_data = response.json().get("value", [])
-
-        if not versions_data:
-            # No versions found, maybe it's the initial version?
-            # The Graph API 'versions' endpoint might not list the initial version (v1.0)
-            # We can potentially return a default like "1.0" or None, or fetch the item details again
-            # to see if it has a version property (unlikely for the item itself).
-            # For now, let's return None or a default indicator if no explicit versions are listed.
-            # A common practice is that the 'versions' collection only includes subsequent versions.
-            # Let's assume if no versions are listed, it's the initial version, but we can't get its specific 'version' string easily.
-            # Returning None or a placeholder might be best, or try to infer from item details if possible.
-            # Let's return None and handle this in the calling function if needed.
-            frappe.log_warning(f"No explicit versions found for item {item_id} from link {teams_link}", "SharePoint Get Version")
-            return None # Or return "1.0" if that's a safe assumption
-
-        # Versions are typically ordered by modified date, latest first.
-        latest_version = versions_data[0]
-        sharepoint_version_number = latest_version.get("version") # This is the string like "1.0", "2.0" etc.
+        
+        sharepoint_version_number = response.json().get("id") # This is the string like "1.0", "2.0" etc.
 
         if not sharepoint_version_number:
              frappe.throw("SharePoint version number not found in latest version data for item {0}: {1}".format(item_id, latest_version))
