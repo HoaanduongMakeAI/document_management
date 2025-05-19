@@ -63,7 +63,8 @@
    "fieldname": "sharepoint_version",
    "fieldtype": "Data",
    "label": "Sharepoint Version",
-   "read_only": 1
+   "read_only": 1,
+   "in_list_view": 1
   }
  ],
  "index_web_pages_for_search": 1,
