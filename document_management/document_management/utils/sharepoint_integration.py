@@ -814,8 +814,7 @@ def get_sharepoint_version_from_link(teams_link):
         
         sharepoint_version_number = response.json().get("id") # This is the string like "1.0", "2.0" etc.
 
-        frappe.msgprint(response.json())
-
+        frappe.msgprint(f"{response.json()}")
         if not sharepoint_version_number:
              frappe.throw("SharePoint version number not found in latest version data for item {0}: {1}".format(item_id, latest_version))
              return None
