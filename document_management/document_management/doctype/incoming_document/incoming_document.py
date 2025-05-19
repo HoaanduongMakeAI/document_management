@@ -20,17 +20,32 @@ class IncomingDocument(Document):
 			# Fetch and store original document tasks as a dictionary
 			original_tasks = frappe.get_all("Document Task", filters={"parent": self.name}, fields=["*"])
 			self._original_tasks_dict = {d.name: d for d in original_tasks} # Create dictionary for easy lookup
+			# Fetch and store original document versions
+			original_versions = frappe.get_all("Document Version", filters={"parent": self.name}, fields=["*"])
+			self._original_versions_dict = {v.name: v for v in original_versions} # Create dictionary for easy lookup
 			frappe.msgprint(f"Original tasks dict (before_save): {self._original_tasks_dict}")
+			frappe.msgprint(f"Original versions dict (before_save): {self._original_versions_dict}")
 		else: # New document
 			self._original_status = None
 			self._original_tasks_dict = {}
 			self._original_teams_link = None # Initialize for new document
+			self._original_versions_dict = {} # Initialize for new document
 
 	def on_update(self):
-		# Check for changes in teams_link
+		# Check for changes in teams_link and create a new version if it changes
 		if self.teams_link != (self._original_teams_link if hasattr(self, '_original_teams_link') else None):
 			if self.teams_link: # Only trigger if teams_link is not empty after change
-				self.create_document_version_and_notify("Teams Link Updated")
+				# Create a new document version entry when teams_link changes
+				self.create_document_version_entry("Teams Link Updated")
+
+		# Check for new document versions and send notification
+		original_versions_dict = self._original_versions_dict if hasattr(self, '_original_versions_dict') and self._original_versions_dict else {}
+		current_versions_dict = {v.name: v.as_dict() for v in self.versions}
+
+		for version_name, current_version in current_versions_dict.items():
+			if version_name not in original_versions_dict:
+				# This is a new version, send notification
+				self.notify_version_added(frappe._dict(current_version))
 
 		# Check status changes to trigger notifications
 		if self.status != self._original_status:
