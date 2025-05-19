@@ -16,7 +16,7 @@ class IncomingDocument(Document):
 		# Store original status before save
 		if self.name: # Check if it's an existing document
 			self._original_status = frappe.db.get_value("Incoming Document", self.name, "status")
-			self._original_team_links = frappe.db.get_value("Incoming Document", self.name, "team_links") # Store original team_links
+			self._original_teams_link = frappe.db.get_value("Incoming Document", self.name, "teams_link") # Store original teams_link
 			# Fetch and store original document tasks as a dictionary
 			original_tasks = frappe.get_all("Document Task", filters={"parent": self.name}, fields=["*"])
 			self._original_tasks_dict = {d.name: d for d in original_tasks} # Create dictionary for easy lookup
@@ -24,12 +24,12 @@ class IncomingDocument(Document):
 		else: # New document
 			self._original_status = None
 			self._original_tasks_dict = {}
-			self._original_team_links = None # Initialize for new document
+			self._original_teams_link = None # Initialize for new document
 
 	def on_update(self):
-		# Check for changes in team_links
-		if self.team_links != (self._original_team_links if hasattr(self, '_original_team_links') else None):
-			if self.team_links: # Only trigger if team_links is not empty after change
+		# Check for changes in teams_link
+		if self.teams_link != (self._original_teams_link if hasattr(self, '_original_teams_link') else None):
+			if self.teams_link: # Only trigger if teams_link is not empty after change
 				self.create_document_version_and_notify("Teams Link Updated")
 
 		# Check status changes to trigger notifications
