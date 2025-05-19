@@ -812,6 +812,7 @@ def get_sharepoint_version_from_link(teams_link):
         response = requests.get(versions_url, headers=headers)
         response.raise_for_status() # Ensure the request was successful
 
+        frappe.msgprint(response.json())
         versions_data = response.json().get("value", [])
 
         if not versions_data:
@@ -832,7 +833,7 @@ def get_sharepoint_version_from_link(teams_link):
         sharepoint_version_number = latest_version.get("version") # This is the string like "1.0", "2.0" etc.
 
         if not sharepoint_version_number:
-             frappe.log_warning(f"SharePoint version number not found in latest version data for item {item_id}: {latest_version}", "SharePoint Get Version")
+             frappe.throw("SharePoint version number not found in latest version data for item {0}: {1}".format(item_id, latest_version))
              return None
 
         return sharepoint_version_number
@@ -844,11 +845,11 @@ def get_sharepoint_version_from_link(teams_link):
     except requests.exceptions.RequestException as e:
         err_msg = e.response.text if e.response and e.response.text else str(e)
         frappe.log_error(f"Graph API request error fetching version for link '{teams_link}': {err_msg}", "SharePoint Get Version")
-        frappe.throw(_("API Error fetching SharePoint version: {0}").format(err_msg))
+        frappe.throw(__("API Error fetching SharePoint version: {0}").format(err_msg))
         return None
     except Exception as e:
         frappe.log_error(f"Unexpected error fetching SharePoint version for link '{teams_link}': {frappe.get_traceback()}", "SharePoint Get Version")
-        frappe.throw(_("Unexpected error fetching SharePoint version: {0}").format(str(e)))
+        frappe.throw(__("Unexpected error fetching SharePoint version: {0}").format(str(e)))
         return None
 
 
