@@ -401,23 +401,9 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
 
         frappe.msgprint(f"SharePoint upload response: {upload_result}")
 
-        # --- Create Document Version Entry ---
-        frappe.msgprint("Creating document version entry...")
         sharepoint_link = upload_result.get("webUrl")
         # Use the item ID from the upload response as a more stable version indicator if available
         version_id = upload_result.get("id", upload_result.get("eTag", "N/A"))
-
-        current_version_count = len(doc.get("versions", []))
-        next_version_number = current_version_count + 1
-
-        new_version = doc.append("versions", {
-            "version_number": next_version_number,
-            "sharepoint_link": sharepoint_link,
-            "action_taken": action_details.get("action", "Upload"),
-            "action_by": action_details.get("user", frappe.session.user),
-            "action_timestamp": frappe.utils.now_datetime(),
-            "file_url": file_doc.file_url if doc.get("store_locally") else None
-        })
 
         # --- Optional: Delete Local File ---
         if not doc.get("store_locally"):
@@ -429,19 +415,15 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
                 # frappe.delete_doc("File", file_doc.name, ignore_permissions=True, force=True) # Be very careful with force=True
                 # frappe.msgprint(f"Removed local file '{file_path_abs}' after SharePoint upload for '{doc.name}'.")
                 frappe.msgprint(f"Removed local file '{file_path_abs}'.")
-                # Update the child table entry's file_url after deletion
-                frappe.db.set_value("Document Version", new_version.name, "file_url", None)
+                # No need to update child table file_url here as version is created in on_update
             except Exception as del_err:
                 # Log deletion error but don't necessarily stop the whole process, maybe just msgprint?
                 # Or throw if deletion is critical? User asked for throw.
                 frappe.throw(f"Failed to delete local file '{file_path_abs}': {del_err}")
 
 
-        # frappe.msgprint(f"Successfully uploaded '{file_name}' to SharePoint for document '{doc.name}'. Link: {sharepoint_link}")
-        frappe.msgprint(f"Document version created. SharePoint Link: {sharepoint_link}")
-        # Save the document to persist the new child table row
-        doc.save(ignore_permissions=True) # Save needed to persist child table changes made via .append()
-        frappe.msgprint("SharePoint upload process completed successfully.")
+        frappe.msgprint(f"Successfully uploaded '{file_name}' to SharePoint for document '{doc.name}'. Link: {sharepoint_link}")
+        # Do NOT save the document here. The on_update hook will handle saving and versioning.
         return {"sharepoint_link": sharepoint_link, "version_id": version_id}
 
     except requests.exceptions.RequestException as e:
@@ -800,6 +782,74 @@ def _get_drive_item_from_web_url(web_url):
     except Exception as e:
         frappe.log_error(f"Unexpected error resolving share link '{web_url}': {frappe.get_traceback()}", "SharePoint Download Helper")
         raise frappe.ValidationError(_("Unexpected error resolving share link: {0}").format(str(e)))
+
+
+@frappe.whitelist()
+def get_sharepoint_version_from_link(teams_link):
+    """
+    Fetches the latest SharePoint version number for a given teams_link (webUrl).
+    """
+    if not teams_link:
+        frappe.throw("SharePoint URL (teams_link) is required to fetch version.")
+        return None # Should not be reached due to throw
+
+    try:
+        item_info = _get_drive_item_from_web_url(teams_link)
+
+        if not item_info.get("is_file"):
+            frappe.throw("The provided link does not point to a file.")
+            return None
+
+        drive_id = item_info["drive_id"]
+        item_id = item_info["item_id"]
+
+        # Graph API endpoint to list versions of a drive item
+        versions_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{item_id}/versions"
+
+        headers = get_headers() # Get fresh auth headers
+
+        # Fetch the versions
+        response = requests.get(versions_url, headers=headers)
+        response.raise_for_status() # Ensure the request was successful
+
+        versions_data = response.json().get("value", [])
+
+        if not versions_data:
+            # No versions found, maybe it's the initial version?
+            # The Graph API 'versions' endpoint might not list the initial version (v1.0)
+            # We can potentially return a default like "1.0" or None, or fetch the item details again
+            # to see if it has a version property (unlikely for the item itself).
+            # For now, let's return None or a default indicator if no explicit versions are listed.
+            # A common practice is that the 'versions' collection only includes subsequent versions.
+            # Let's assume if no versions are listed, it's the initial version, but we can't get its specific 'version' string easily.
+            # Returning None or a placeholder might be best, or try to infer from item details if possible.
+            # Let's return None and handle this in the calling function if needed.
+            frappe.log_warning(f"No explicit versions found for item {item_id} from link {teams_link}", "SharePoint Get Version")
+            return None # Or return "1.0" if that's a safe assumption
+
+        # Versions are typically ordered by modified date, latest first.
+        latest_version = versions_data[0]
+        sharepoint_version_number = latest_version.get("version") # This is the string like "1.0", "2.0" etc.
+
+        if not sharepoint_version_number:
+             frappe.log_warning(f"SharePoint version number not found in latest version data for item {item_id}: {latest_version}", "SharePoint Get Version")
+             return None
+
+        return sharepoint_version_number
+
+    except frappe.ValidationError as e: # Catch errors from _get_drive_item_from_web_url or other validation
+        frappe.log_error(f"Validation error fetching version for link '{teams_link}': {str(e)}", "SharePoint Get Version")
+        frappe.throw(str(e)) # Re-throw the validation error
+        return None
+    except requests.exceptions.RequestException as e:
+        err_msg = e.response.text if e.response and e.response.text else str(e)
+        frappe.log_error(f"Graph API request error fetching version for link '{teams_link}': {err_msg}", "SharePoint Get Version")
+        frappe.throw(_("API Error fetching SharePoint version: {0}").format(err_msg))
+        return None
+    except Exception as e:
+        frappe.log_error(f"Unexpected error fetching SharePoint version for link '{teams_link}': {frappe.get_traceback()}", "SharePoint Get Version")
+        frappe.throw(_("Unexpected error fetching SharePoint version: {0}").format(str(e)))
+        return None
 
 
 @frappe.whitelist()

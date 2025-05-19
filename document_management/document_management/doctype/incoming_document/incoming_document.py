@@ -6,7 +6,7 @@ from frappe.model.document import Document
 from frappe.utils import strip_html, get_abbr
 
 # Import the upload function - Adjust path due to directory move
-from document_management.document_management.utils.sharepoint_integration import upload_file_to_sharepoint
+from document_management.document_management.utils.sharepoint_integration import upload_file_to_sharepoint, get_sharepoint_version_from_link
 
 class IncomingDocument(Document):
 	# autoname is now handled by Naming Series in JSON
@@ -16,6 +16,7 @@ class IncomingDocument(Document):
 		# Store original status before save
 		if self.name: # Check if it's an existing document
 			self._original_status = frappe.db.get_value("Incoming Document", self.name, "status")
+			self._original_team_links = frappe.db.get_value("Incoming Document", self.name, "team_links") # Store original team_links
 			# Fetch and store original document tasks as a dictionary
 			original_tasks = frappe.get_all("Document Task", filters={"parent": self.name}, fields=["*"])
 			self._original_tasks_dict = {d.name: d for d in original_tasks} # Create dictionary for easy lookup
@@ -23,8 +24,14 @@ class IncomingDocument(Document):
 		else: # New document
 			self._original_status = None
 			self._original_tasks_dict = {}
+			self._original_team_links = None # Initialize for new document
 
 	def on_update(self):
+		# Check for changes in team_links
+		if self.team_links != (self._original_team_links if hasattr(self, '_original_team_links') else None):
+			if self.team_links: # Only trigger if team_links is not empty after change
+				self.create_document_version_and_notify("Teams Link Updated")
+
 		# Check status changes to trigger notifications
 		if self.status != self._original_status:
 			if self.status == "Under Review":
@@ -254,3 +261,63 @@ class IncomingDocument(Document):
 		frappe.log_error(f"Assignment notification sent for Incoming Document: {self.name} to {', '.join(assigned_users)}", "INCOMING DOCUMENT ASSIGNMENT NOTIFICATION SENT")
 
 # Whitelisted functions moved to utils/sharepoint_integration.py
+
+def create_document_version_and_notify(self, action_taken):
+	"""
+	Creates a new Document Version entry, fetches Sharepoint version,
+	and sends email notifications.
+	"""
+	if not self.teams_link:
+		frappe.log_warning(f"Cannot create document version for {self.name}: teams_link is empty.", "INCOMING DOCUMENT VERSIONING")
+		return
+
+	sharepoint_version = None
+	try:
+		# Fetch Sharepoint version using the teams_link
+		sharepoint_version = get_sharepoint_version_from_link(self.teams_link)
+		if not sharepoint_version:
+			frappe.log_warning(f"Could not fetch Sharepoint version for link: {self.teams_link}", "INCOMING DOCUMENT VERSIONING")
+			# Continue without Sharepoint version if fetching fails
+	except Exception as e:
+		frappe.log_error(f"Error fetching Sharepoint version for link {self.teams_link}: {e}", "INCOMING DOCUMENT VERSIONING")
+		# Continue without Sharepoint version if fetching fails
+
+	# Determine the next version number
+	current_version_count = len(self.get("versions", []))
+	next_version_number = current_version_count + 1
+
+	# Create a new Document Version entry
+	new_version = self.append("versions", {
+		"version_number": next_version_number,
+		"sharepoint_link": self.teams_link, # Use the current teams_link
+		"action_taken": action_taken,
+		"action_by": frappe.session.user,
+		"action_timestamp": frappe.utils.now_datetime(),
+		"sharepoint_version": sharepoint_version # Save the fetched Sharepoint version
+		# file_url is not needed here as the file is on Sharepoint
+	})
+
+	# Save the document to persist the new child table row
+	# Use ignore_permissions=True as this is a system-triggered update
+	try:
+		self.save(ignore_permissions=True)
+		frappe.log_error(f"Created Document Version {new_version.name} for Incoming Document: {self.name}", "INCOMING DOCUMENT VERSION CREATED")
+	except Exception as e:
+		frappe.log_error(f"Failed to save Incoming Document {self.name} after creating version: {e}", "INCOMING DOCUMENT VERSION SAVE FAILED")
+		# Decide if we should stop here or try sending emails anyway.
+		# It's better to stop if the version wasn't saved.
+		frappe.throw(f"Failed to save document after creating version: {e}")
+
+
+	# Send email notifications
+	try:
+		self.notify_reviewers()
+		frappe.log_error(f"Reviewer notification triggered for Incoming Document: {self.name}", "INCOMING DOCUMENT NOTIFICATION TRIGGERED")
+	except Exception as e:
+		frappe.log_error(f"Failed to trigger reviewer notification for Incoming Document: {self.name}: {e}", "INCOMING DOCUMENT NOTIFICATION FAILED")
+
+	try:
+		self.notify_assigned_users()
+		frappe.log_error(f"Assigned users notification triggered for Incoming Document: {self.name}", "INCOMING DOCUMENT NOTIFICATION TRIGGERED")
+	except Exception as e:
+		frappe.log_error(f"Failed to trigger assigned users notification for Incoming Document: {self.name}: {e}", "INCOMING DOCUMENT NOTIFICATION FAILED")

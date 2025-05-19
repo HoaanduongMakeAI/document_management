@@ -11,7 +11,8 @@
   "sharepoint_link",
   "action_taken",
   "action_by",
-  "action_timestamp"
+  "action_timestamp",
+  "sharepoint_version"
  ],
  "fields": [
   {
@@ -56,6 +57,12 @@
    "fieldtype": "Datetime",
    "in_list_view": 1,
    "label": "Action Timestamp",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sharepoint_version",
+   "fieldtype": "Data",
+   "label": "Sharepoint Version",
    "read_only": 1
   }
  ],
