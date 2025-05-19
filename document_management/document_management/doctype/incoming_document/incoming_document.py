@@ -310,11 +310,11 @@ def create_document_version_and_notify(self, action_taken):
 
 
 	# Send email notifications
-	try:
-		self.notify_reviewers()
-		frappe.log_error(f"Reviewer notification triggered for Incoming Document: {self.name}", "INCOMING DOCUMENT NOTIFICATION TRIGGERED")
-	except Exception as e:
-		frappe.log_error(f"Failed to trigger reviewer notification for Incoming Document: {self.name}: {e}", "INCOMING DOCUMENT NOTIFICATION FAILED")
+	# try:
+	# 	self.notify_reviewers()
+	# 	frappe.log_error(f"Reviewer notification triggered for Incoming Document: {self.name}", "INCOMING DOCUMENT NOTIFICATION TRIGGERED")
+	# except Exception as e:
+	# 	frappe.log_error(f"Failed to trigger reviewer notification for Incoming Document: {self.name}: {e}", "INCOMING DOCUMENT NOTIFICATION FAILED")
 
 	try:
 		self.notify_assigned_users()
