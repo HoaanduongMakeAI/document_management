@@ -94,7 +94,7 @@ class IncomingDocument(Document):
 					frappe.share.add_assignee(self.doctype, self.name, task.assignee)
 					frappe.log_error(f"Added assignee {task.assignee} to Incoming Document: {self.name}", "INCOMING DOCUMENT ASSIGNEE ADDED")
 				except Exception as e:
-					frappe.log_error(f"Failed to add assignee {task.assignee} to Incoming Document: {self.name}: {e}", "INCOMING DOCUMENT ASSIGNEE ADD FAILED")
+					frappe.throw(f"Failed to add assignee {task.assignee} to Incoming Document: {self.name}: {e}", "INCOMING DOCUMENT ASSIGNEE ADD FAILED")
 
 
 		# Send consolidated email to each assignee
