@@ -262,6 +262,7 @@ class IncomingDocument(Document):
 
 
 
+	@frappe.whitelist()
 	def create_document_version_and_notify(self, action_taken):
 		"""
 		Creates a new Document Version entry, fetches Sharepoint version,
