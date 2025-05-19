@@ -812,9 +812,9 @@ def get_sharepoint_version_from_link(teams_link):
         response = requests.get(versions_url, headers=headers)
         response.raise_for_status() # Ensure the request was successful
 
-        frappe.throw(f"{response.json()}")
+        versions = response.json().get("value")
         
-        sharepoint_version_number = response.json().get("id") # This is the string like "1.0", "2.0" etc.
+        sharepoint_version_number = versions[0]["id"] # This is the string like "1.0", "2.0" etc.
 
         
         if not sharepoint_version_number:
