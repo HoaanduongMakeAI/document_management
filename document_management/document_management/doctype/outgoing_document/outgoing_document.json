@@ -25,6 +25,11 @@
   "created_by_user",
   "signing_approver",
   "final_approver",
+  "processing_details_section",
+  "status",
+  "due_date",
+  "instructions",
+  "document_tasks",
   "versions_section",
   "versions"
  ],
@@ -151,6 +156,36 @@
    "fieldtype": "Link",
    "label": "Final Approver",
    "options": "User"
+  },
+  {
+   "fieldname": "processing_details_section",
+   "fieldtype": "Tab Break",
+   "label": "Processing Details"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Pending\nUnder Review\nTasks Assigned\nIn Progress\nCompleted\nArchived",
+   "reqd": 1
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "label": "Due Date"
+  },
+  {
+   "fieldname": "instructions",
+   "fieldtype": "Text",
+   "label": "Instructions"
+  },
+  {
+   "fieldname": "document_tasks",
+   "fieldtype": "Table",
+   "label": "Tasks",
+   "options": "Document Task",
+   "insert_after": "instructions"
   },
   {
    "fieldname": "versions_section",

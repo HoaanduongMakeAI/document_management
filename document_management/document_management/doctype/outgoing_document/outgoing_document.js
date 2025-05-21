@@ -1,4 +1,4 @@
-frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
+frappe.ui.form.on('Outgoing Document', {
     custom_handle_attach_and_upload: function(frm) {
         let current_sharepoint_path = '/'; // Relative path within the selected_folder, always starts at root of selected_folder
         let current_selected_folder_docname = frm.doc.folder || ''; // Base Folder Doctype name
@@ -105,13 +105,18 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
                             if (r_file_doc.message) {
                                 let file_doc_name = r_file_doc.message;
                                 frappe.show_alert({ message: __('File details fetched. Uploading to SharePoint...'), indicator: 'info' });
+                                // current_sharepoint_path here should be the folder path to upload into.
+                                // If a file was selected for linking, current_sharepoint_path points to that file.
+                                // We need the parent folder of that file, or the current browsed path if it's a folder.
                                 let upload_target_relative_path = current_sharepoint_path;
                                 if (selected_item_for_linking && !selected_item_for_linking.is_folder) {
+                                    // If a file was selected, upload to its parent directory
                                     let parts = selected_item_for_linking.path.split('/').filter(p => p.trim() !== '');
                                     parts.pop();
                                     upload_target_relative_path = '/' + parts.join('/');
                                     if (upload_target_relative_path === '//') upload_target_relative_path = '/';
                                 }
+
 
                                 frappe.call({
                                     method: 'document_management.document_management.utils.sharepoint_integration.upload_file_to_path',
@@ -127,9 +132,8 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
                                             frm.set_value('teams_link', r_upload.message.sharepoint_link);
                                             frm.set_value('path', r_upload.message.absolute_path);
                                             frm.set_value('folder', target_folder_docname_for_action);
-                                            frappe.show_alert({ message: __('File successfully uploaded and linked. Please save the document.'), indicator: 'green' });
-                                            // User should save manually after mandatory fields are filled.
-                                            dialog.hide();
+                                            frappe.show_alert({ message: __('File successfully uploaded and linked. Creating document version...'), indicator: 'info' });
+                                            
                                         } else if (r_upload.message && r_upload.message.error) {
                                             frappe.msgprint({ title: __('Upload Error'), indicator: 'red', message: r_upload.message.error });
                                         } else if (r_upload.exc) {
@@ -138,10 +142,12 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
                                         } else {
                                             frappe.msgprint({ title: __('Upload Issue'), indicator: 'orange', message: __('Upload completed but no link/path was returned.')});
                                         }
+                                        dialog.hide();
                                     },
                                     error: function(err_upload) {
                                         frappe.msgprint({ title: __('Network Error'), indicator: 'red', message: __('Failed to communicate for SharePoint upload.')});
                                         console.error("AJAX Error (Upload):", err_upload);
+                                        dialog.hide();
                                     }
                                 });
                             } else if (r_file_doc.exc) {
@@ -164,7 +170,7 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
                         method: 'document_management.document_management.utils.sharepoint_integration.get_sharepoint_item_details',
                         args: {
                             target_folder_docname: target_folder_docname_for_action,
-                            relative_path_to_item: selected_item_for_linking.path
+                            relative_path_to_item: selected_item_for_linking.path // Path is relative to Folder DocType root
                         },
                         callback: function(r_item) {
                             if (r_item.message && r_item.message.is_file && r_item.message.sharepoint_link && r_item.message.absolute_path) {
@@ -174,7 +180,7 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
                                 frappe.show_alert({ message: __('Successfully linked to existing SharePoint file. Please save the document.'), indicator: 'green' });
                                 // User should save manually after mandatory fields are filled.
                                 dialog.hide();
-                            } else if (r_item.message && !r_item.message.is_file) {
+                            } else if (r_item.message && !r_item.message.is_file) { // Should not happen if selected_item_for_linking.is_folder is false
                                 frappe.msgprint({ title: __('Selection Error'), indicator: 'orange', message: __('The selected item is unexpectedly a folder. Please try again.')});
                             } else if (r_item.message && r_item.message.error) {
                                 frappe.msgprint({ title: __('Item Details Error'), indicator: 'red', message: r_item.message.error });
@@ -209,7 +215,7 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
                 method: "document_management.document_management.utils.sharepoint_integration.list_sharepoint_folder_contents",
                 args: {
                     folder_docname: current_selected_folder_docname,
-                    relative_path: current_sharepoint_path
+                    relative_path: current_sharepoint_path // This is relative to the Folder DocType's root
                 },
                 callback: function(r) {
                     let file_is_staged_for_upload = dialog.get_value('file_to_upload');
@@ -321,7 +327,7 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
         frm.get_field('open_teams_link_btn').toggle(Boolean(frm.doc.teams_link));
 
         if (!frm.is_new()) {
-            frm.add_custom_button(__('Attach/Link SharePoint File'), function() {
+            frm.add_custom_button(__('Attach/Link SharePoint File'), function() { // Changed button label
                 frm.trigger('custom_handle_attach_and_upload');
             }, __('Actions'));
         }
@@ -338,7 +344,7 @@ frappe.ui.form.on('Outgoing Document', { // Changed Doctype Name
         }
     },
 
-    upload_to_sharepoint_btn: function(frm) {
+    upload_to_sharepoint_btn: function(frm) { // This button is likely from JSON, ensure its label is also updated or it's removed if custom_button is preferred
         if (!frm.is_new()) {
             frm.trigger('custom_handle_attach_and_upload');
         } else {

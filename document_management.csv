@@ -1,0 +1,147 @@
+API Error during download: {0}
+API Error resolving share link: {0}
+Action By
+Action Taken
+Action Timestamp
+Actions for file: {0}
+An error occurred during SharePoint upload. Check server logs.
+An error occurred while trying to download the file. Check server logs.
+Approval Details
+Assignee
+Attach Document
+Attach File
+Attach/Link SharePoint File
+Back to Parent Folder
+Base Folder Path
+Clear Selection / Upload
+Contents
+Could not extract necessary details ({0}) from the shared link response.
+Could not fetch SharePoint link for the selected file. Document creation aborted. Path: {0}
+Could not retrieve details for the selected SharePoint item.
+Could not retrieve file details for upload.
+Could not retrieve file details necessary for download.
+Create Incoming Document
+Create Outgoing Document
+Current Location:
+Current Path Contents
+Date Issued
+Date Received
+Document Details
+Document Management
+Document Management Settings
+Document Manager
+Document Task
+Document Task Assignee
+Document Type Name
+Document Version
+Document Versions
+Download Error
+Download File
+Download Request Failed
+Download started. Check your browser downloads.
+Enter the Object ID of the Microsoft 365 Group whose SharePoint site you want to use.
+Error fetching SharePoint link: {0}. Document creation aborted.
+Error fetching file details for download. Check server logs.
+Error fetching file details. Check server logs.
+Error fetching file link. Check server logs.
+Error fetching item details. Check server logs.
+Failed to communicate for SharePoint upload.
+Failed to communicate for file details.
+Failed to communicate for file link.
+Failed to communicate for item details.
+Failed to fetch IDs and Group Name.
+Failed to fetch file details for download.
+Failed to send download request to the server. Check network and server logs.
+Fetch IDs
+Fetch SharePoint IDs
+Fetch SharePoint Site/Drive IDs from Group ID
+Fetching Group Details...
+Fetching SharePoint IDs...
+Fetching details for selected SharePoint item...
+Fetching file details for download...
+Fetching file details for upload...
+File '{0}' is selected for linking. If 'Process Selection' is clicked now, this file will be linked. To upload a new file instead, clear the selection first.
+File Details Issue
+File URL (ERPNext)
+File details fetched. Uploading to SharePoint...
+File link not available or item is not a file.
+File successfully uploaded and linked. Creating document version...
+File successfully uploaded and linked. Please save the document.
+Final Approver
+Folder Path
+Folder is empty or unable to load contents.
+Group Name
+IDs and Group Name fetched successfully.
+If you want to upload a new file to the selected path/folder.
+Incoming Document
+Incoming Number (Manual)
+Initiating download...
+Item Details Error
+Item Details Issue
+Loading contents for:
+MS Teams Link
+Microsoft Entra (Azure AD) Group ID
+Microsoft Entra Group
+Microsoft Graph Connected App
+Network Error
+Network error while listing contents.
+New file will be uploaded to:
+Open File Link
+Open File in New Tab
+Outgoing Document
+Outgoing Number
+Path:
+Pending Final Approval
+Pending Signing Approval
+Please either select a file to upload, or navigate to and select an existing file in SharePoint to link.
+Please enter the Microsoft Entra (Azure AD) Group ID first.
+Please save the Folder document first.
+Please save the document before attaching files.
+Please select a SharePoint Folder Location first.
+Please select a SharePoint Folder Location to browse.
+Please select a SharePoint Folder Location.
+Please upload a new file or select an existing file from the list to link.
+Process Selection
+Processing Details
+Relative path of the folder in SharePoint (e.g., 'Department/SubFolder'). This will be used to generate the document name.
+Save the document to see SharePoint contents.
+Select the Connected App configured for Microsoft Graph API access.
+Select the SharePoint folder where this document's files should be stored. If empty, uses the default location from settings.
+Select the base SharePoint Folder record. This determines the root for browsing.
+Selected file:
+Selected for linking:
+Selection Error
+Server error while listing contents.
+SharePoint Contents
+SharePoint Drive (Library) ID
+SharePoint Folder Location
+SharePoint IDs fetched successfully
+SharePoint Integration
+SharePoint Link
+SharePoint Site ID
+SharePoint URL (teams_link) is required for download.
+Sharepoint Version
+Signing Approver
+Storage Location
+Successfully linked to existing SharePoint file. Please save the document.
+Task Status
+Tasks Assigned
+The ID of the target Document Library (Drive) within the SharePoint Site.
+The ID of the target SharePoint Site (obtainable via Graph API/Explorer).
+The Microsoft Entra Group (and associated SharePoint site/drive) this folder belongs to.
+The base path within the Drive where documents will be stored (e.g., 'Shared Documents/Folder').
+The full path to the file in SharePoint after upload.
+The provided link does not point to a downloadable file.
+The selected item is unexpectedly a folder. Please try again.
+This folder is empty.
+Unexpected error during download: {0}
+Unexpected error resolving share link: {0}
+Upload Error
+Upload Issue
+Upload New File (Optional)
+Upload completed but no link/path was returned.
+Upload or Link File to SharePoint
+Version Number
+Versions
+Văn thư
+Web URL is required to fetch drive item details.
