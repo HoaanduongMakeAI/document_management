@@ -20,16 +20,29 @@
   "open_teams_link_btn",
   "upload_to_sharepoint_btn",
   "document_attachment",
-  "approval_details_section",
-  "approval_status",
-  "created_by_user",
-  "signing_approver",
-  "final_approver",
   "processing_details_section",
   "status",
   "due_date",
   "instructions",
   "document_tasks",
+  "approval_details_section",
+  "approval_status",
+  "drafting_section",
+  "created_by_user",
+  "drafting_date",
+  "department_approval_section",
+  "department_approver",
+  "department_approval_date",
+  "department_approval_feedback",
+  "leadership_review_signing_section",
+  "leadership_reviewer",
+  "leadership_review_date",
+  "leadership_review_feedback",
+  "leader_signer",
+  "signing_date",
+  "scanned_signature",
+  "signing_approver",
+  "final_approver",
   "versions_section",
   "versions"
  ],
@@ -135,8 +148,13 @@
    "fieldname": "approval_status",
    "fieldtype": "Select",
    "label": "Approval Status",
-   "options": "Draft\nPending Signing Approval\nPending Final Approval\nApproved\nIssued\nRejected",
+   "options": "Draft\nPending Department Approval\nDepartment Approved\nDepartment Rejected\nPending Leadership Review\nLeadership Approved\nLeadership Rejected\nPending Signing\nSigned\nIssued\nRejected",
    "reqd": 1
+  },
+  {
+   "fieldname": "drafting_section",
+   "fieldtype": "Section Break",
+   "label": "Drafting"
   },
   {
    "fieldname": "created_by_user",
@@ -144,6 +162,69 @@
    "label": "Created By",
    "options": "User",
    "read_only": 1
+  },
+  {
+   "fieldname": "drafting_date",
+   "fieldtype": "Date",
+   "label": "Drafting Date"
+  },
+  {
+   "fieldname": "department_approval_section",
+   "fieldtype": "Section Break",
+   "label": "Department Approval"
+  },
+  {
+   "fieldname": "department_approver",
+   "fieldtype": "Link",
+   "label": "Department Approver",
+   "options": "User"
+  },
+  {
+   "fieldname": "department_approval_date",
+   "fieldtype": "Date",
+   "label": "Department Approval Date"
+  },
+  {
+   "fieldname": "department_approval_feedback",
+   "fieldtype": "Text",
+   "label": "Department Approval Feedback"
+  },
+  {
+   "fieldname": "leadership_review_signing_section",
+   "fieldtype": "Section Break",
+   "label": "Leadership Review and Signing"
+  },
+  {
+   "fieldname": "leadership_reviewer",
+   "fieldtype": "Link",
+   "label": "Leadership Reviewer",
+   "options": "User"
+  },
+  {
+   "fieldname": "leadership_review_date",
+   "fieldtype": "Date",
+   "label": "Leadership Review Date"
+  },
+  {
+   "fieldname": "leadership_review_feedback",
+   "fieldtype": "Text",
+   "label": "Leadership Review Feedback"
+  },
+  {
+   "fieldname": "leader_signer",
+   "fieldtype": "Link",
+   "label": "Leader Signer",
+   "options": "User"
+  },
+  {
+   "fieldname": "signing_date",
+   "fieldtype": "Date",
+   "label": "Signing Date"
+  },
+  {
+   "fieldname": "scanned_signature",
+   "fieldtype": "Attach",
+   "label": "Scanned Signature"
   },
   {
    "fieldname": "signing_approver",
@@ -189,7 +270,7 @@
   },
   {
    "fieldname": "versions_section",
-   "fieldtype": "Section Break",
+   "fieldtype": "Tab Break",
    "label": "Document Versions"
   },
   {

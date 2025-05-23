@@ -104,6 +104,9 @@ class OutgoingDocument(Document):
 		for assignee, tasks in tasks_to_notify.items():
 			self.notify_assignee_tasks_change(assignee, tasks)
 
+		# Handle approval workflow status changes
+		self.update_approval_workflow()
+
 	def notify_assignee_tasks_change(self, assignee, tasks):
 		if not tasks:
 			return
@@ -396,3 +399,278 @@ class OutgoingDocument(Document):
 			frappe.log_error(f"Failed to save Outgoing Document {self.name} after creating version: {e}", "OUTGOING DOCUMENT VERSION SAVE FAILED")
 			# It's better to stop if the version wasn't saved.
 			frappe.throw(f"Failed to save document after creating version: {e}")
+
+	def update_approval_workflow(self):
+		"""
+		Handles state transitions and updates fields based on approval_status changes.
+		"""
+		original_status = self._original_approval_status if hasattr(self, '_original_approval_status') else None
+		current_status = self.approval_status
+
+		if current_status != original_status:
+			frappe.log_error(f"Approval status changed from {original_status} to {current_status} for {self.name}", "OUTGOING DOCUMENT STATUS CHANGE")
+
+			if current_status == "Pending Department Approval" and original_status == "Draft":
+				# Transition from Draft to Pending Department Approval
+				self.notify_department_approver_for_approval()
+
+			elif current_status == "Department Approved" and original_status == "Pending Department Approval":
+				# Transition from Pending Department Approval to Department Approved
+				self.department_approver = frappe.session.user
+				self.department_approval_date = frappe.utils.nowdate()
+				self.notify_leadership_reviewer_for_review()
+
+			elif current_status == "Department Rejected" and original_status == "Pending Department Approval":
+				# Transition from Pending Department Approval to Department Rejected
+				self.department_approver = frappe.session.user
+				self.department_approval_date = frappe.utils.nowdate()
+				self.notify_drafter_for_revision("Department Rejected")
+
+			elif current_status == "Draft" and original_status in ["Department Rejected", "Leadership Rejected", "Leadership Review Request Edit"]:
+				# Transition back to Draft for revision
+				self.notify_drafter_for_revision(original_status)
+
+			elif current_status == "Pending Leadership Review" and original_status == "Department Approved":
+				# Transition from Department Approved to Pending Leadership Review
+				self.notify_leadership_reviewer_for_review()
+
+			elif current_status == "Leadership Approved" and original_status == "Pending Leadership Review":
+				# Transition from Pending Leadership Review to Leadership Approved
+				self.leadership_reviewer = frappe.session.user
+				self.leadership_review_date = frappe.utils.nowdate()
+				self.notify_leader_signer_for_signing()
+
+			elif current_status == "Leadership Rejected" and original_status == "Pending Leadership Review":
+				# Transition from Pending Leadership Review to Leadership Rejected
+				self.leadership_reviewer = frappe.session.user
+				self.leadership_review_date = frappe.utils.nowdate()
+				self.notify_drafter_for_revision("Leadership Rejected")
+
+			elif current_status == "Pending Signing" and original_status == "Leadership Approved":
+				# Transition from Leadership Approved to Pending Signing
+				self.notify_leader_signer_for_signing()
+
+			elif current_status == "Signed" and original_status == "Pending Signing":
+				# Transition from Pending Signing to Signed
+				self.leader_signer = frappe.session.user
+				self.signing_date = frappe.utils.nowdate()
+				self.notify_all_parties_signed()
+
+			elif current_status == "Issued" and original_status == "Signed":
+				# Transition from Signed to Issued
+				self.notify_all_parties_issued()
+
+			elif current_status == "Rejected" and original_status not in ["Department Rejected", "Leadership Rejected"]:
+				# Handle rejection from other stages if necessary
+				self.notify_all_parties_rejected()
+
+	def notify_department_approver_for_approval(self):
+		"""
+		Sends email notification to the department approver.
+		"""
+		if self.department_approver:
+			subject = f"Văn bản đi chờ phê duyệt: {self.outgoing_number} - {self.subject}"
+			body = f"""
+<p>Kính gửi Anh/Chị,</p>
+<p>Có văn bản đi chờ Anh/Chị phê duyệt:</p>
+<ul>
+	<li><strong>Số đi:</strong> {self.outgoing_number}</li>
+	<li><strong>Trích yếu:</strong> {self.subject}</li>
+	<li><strong>Bộ phận soạn thảo:</strong> {self.created_by_user}</li>
+</ul>
+<p>Vui lòng truy cập vào hệ thống ERPNext để xem chi tiết và thực hiện phê duyệt:</p>
+<p><a href="/app/outgoing-document/{self.name}">Xem Văn bản đi trên ERPNext</a></p>
+"""
+			try:
+				frappe.sendmail(
+					recipients=[self.department_approver],
+					subject=subject,
+					message=body,
+					now=True
+				)
+				frappe.log_error(f"Notification sent to department approver {self.department_approver} for {self.name}", "OUTGOING DOCUMENT NOTIFICATION")
+			except Exception as e:
+				frappe.log_error(f"Failed to send notification to department approver {self.department_approver} for {self.name}: {e}", "OUTGOING DOCUMENT NOTIFICATION FAILED")
+
+	def notify_leadership_reviewer_for_review(self):
+		"""
+		Sends email notification to the leadership reviewer.
+		"""
+		if self.leadership_reviewer:
+			subject = f"Văn bản đi chờ xem xét: {self.outgoing_number} - {self.subject}"
+			body = f"""
+<p>Kính gửi Anh/Chị,</p>
+<p>Có văn bản đi chờ Anh/Chị xem xét:</p>
+<ul>
+	<li><strong>Số đi:</strong> {self.outgoing_number}</li>
+	<li><strong>Trích yếu:</strong> {self.subject}</li>
+	<li><strong>Bộ phận soạn thảo:</strong> {self.created_by_user}</li>
+	<li><strong>Bộ phận phê duyệt:</strong> {self.department}</li>
+</ul>
+<p>Vui lòng truy cập vào hệ thống ERPNext để xem chi tiết và thực hiện xem xét:</p>
+<p><a href="/app/outgoing-document/{self.name}">Xem Văn bản đi trên ERPNext</a></p>
+"""
+			try:
+				frappe.sendmail(
+					recipients=[self.leadership_reviewer],
+					subject=subject,
+					message=body,
+					now=True
+				)
+				frappe.log_error(f"Notification sent to leadership reviewer {self.leadership_reviewer} for {self.name}", "OUTGOING DOCUMENT NOTIFICATION")
+			except Exception as e:
+				frappe.log_error(f"Failed to send notification to leadership reviewer {self.leadership_reviewer} for {self.name}: {e}", "OUTGOING DOCUMENT NOTIFICATION FAILED")
+
+	def notify_leader_signer_for_signing(self):
+		"""
+		Sends email notification to the leader signer.
+		"""
+		if self.leader_signer:
+			subject = f"Văn bản đi chờ ký duyệt: {self.outgoing_number} - {self.subject}"
+			body = f"""
+<p>Kính gửi Anh/Chị,</p>
+<p>Có văn bản đi chờ Anh/Chị ký duyệt:</p>
+<ul>
+	<li><strong>Số đi:</strong> {self.outgoing_number}</li>
+	<li><strong>Trích yếu:</strong> {self.subject}</li>
+	<li><strong>Bộ phận soạn thảo:</strong> {self.created_by_user}</li>
+	<li><strong>Bộ phận phê duyệt:</strong> {self.department}</li>
+	<li><strong>Người xem xét:</strong> {self.leadership_reviewer}</li>
+</ul>
+<p>Vui lòng truy cập vào hệ thống ERPNext để xem chi tiết và thực hiện ký duyệt:</p>
+<p><a href="/app/outgoing-document/{self.name}">Xem Văn bản đi trên ERPNext</a></p>
+"""
+			try:
+				frappe.sendmail(
+					recipients=[self.leader_signer],
+					subject=subject,
+					message=body,
+					now=True
+				)
+				frappe.log_error(f"Notification sent to leader signer {self.leader_signer} for {self.name}", "OUTGOING DOCUMENT NOTIFICATION")
+			except Exception as e:
+				frappe.log_error(f"Failed to send notification to leader signer {self.leader_signer} for {self.name}: {e}", "OUTGOING DOCUMENT NOTIFICATION FAILED")
+
+	def notify_drafter_for_revision(self, rejection_reason):
+		"""
+		Sends email notification to the drafter for revision.
+		"""
+		if self.created_by_user:
+			subject = f"Văn bản đi cần chỉnh sửa: {self.outgoing_number} - {self.subject}"
+			body = f"""
+<p>Kính gửi Anh/Chị,</p>
+<p>Văn bản đi "{self.outgoing_number} - {self.subject}" cần được chỉnh sửa.</p>
+<p><strong>Lý do:</strong> {rejection_reason}</p>
+"""
+			if rejection_reason == "Department Rejected" and self.department_approval_feedback:
+				body += f"<p><strong>Ý kiến phê duyệt Bộ phận:</strong> {self.department_approval_feedback}</p>"
+			elif rejection_reason in ["Leadership Rejected", "Leadership Review Request Edit"] and self.leadership_review_feedback:
+				body += f"<p><strong>Ý kiến xem xét Lãnh đạo:</strong> {self.leadership_review_feedback}</p>"
+
+			body += f"""
+<p>Vui lòng truy cập vào hệ thống ERPNext để xem chi tiết và thực hiện chỉnh sửa:</p>
+<p><a href="/app/outgoing-document/{self.name}">Xem Văn bản đi trên ERPNext</a></p>
+"""
+			try:
+				frappe.sendmail(
+					recipients=[self.created_by_user],
+					subject=subject,
+					message=body,
+					now=True
+				)
+				frappe.log_error(f"Notification sent to drafter {self.created_by_user} for revision of {self.name}", "OUTGOING DOCUMENT NOTIFICATION")
+			except Exception as e:
+				frappe.log_error(f"Failed to send notification to drafter {self.created_by_user} for revision of {self.name}: {e}", "OUTGOING DOCUMENT NOTIFICATION FAILED")
+
+
+	def notify_all_parties_signed(self):
+		"""
+		Sends email notification to all relevant parties after signing.
+		"""
+		recipients = [self.created_by_user, self.department_approver, self.leadership_reviewer]
+		recipients = list(set([r for r in recipients if r])) # Remove duplicates and None
+
+		if recipients:
+			subject = f"Văn bản đi đã được ký duyệt: {self.outgoing_number} - {self.subject}"
+			body = f"""
+<p>Kính gửi Anh/Chị,</p>
+<p>Văn bản đi "{self.outgoing_number} - {self.subject}" đã được ký duyệt.</p>
+<ul>
+	<li><strong>Người ký duyệt:</strong> {self.leader_signer}</li>
+	<li><strong>Ngày ký duyệt:</strong> {self.signing_date}</li>
+</ul>
+<p>Vui lòng truy cập vào hệ thống ERPNext để xem chi tiết:</p>
+<p><a href="/app/outgoing-document/{self.name}">Xem Văn bản đi trên ERPNext</a></p>
+"""
+			try:
+				frappe.sendmail(
+					recipients=recipients,
+					subject=subject,
+					message=body,
+					now=True
+				)
+				frappe.log_error(f"Notification sent to all parties for signed document {self.name}", "OUTGOING DOCUMENT NOTIFICATION")
+			except Exception as e:
+				frappe.log_error(f"Failed to send notification to all parties for signed document {self.name}: {e}", "OUTGOING DOCUMENT NOTIFICATION FAILED")
+
+
+	def notify_all_parties_issued(self):
+		"""
+		Sends email notification to all relevant parties after issuing.
+		"""
+		recipients = [self.created_by_user, self.department_approver, self.leadership_reviewer, self.leader_signer]
+		recipients = list(set([r for r in recipients if r])) # Remove duplicates and None
+
+		if recipients:
+			subject = f"Văn bản đi đã được ban hành: {self.outgoing_number} - {self.subject}"
+			body = f"""
+<p>Kính gửi Anh/Chị,</p>
+<p>Văn bản đi "{self.outgoing_number} - {self.subject}" đã được ban hành.</p>
+<p>Vui lòng truy cập vào hệ thống ERPNext để xem chi tiết:</p>
+<p><a href="/app/outgoing-document/{self.name}">Xem Văn bản đi trên ERPNext</a></p>
+"""
+			try:
+				frappe.sendmail(
+					recipients=recipients,
+					subject=subject,
+					message=body,
+					now=True
+				)
+				frappe.log_error(f"Notification sent to all parties for issued document {self.name}", "OUTGOING DOCUMENT NOTIFICATION")
+			except Exception as e:
+				frappe.log_error(f"Failed to send notification to all parties for issued document {self.name}: {e}", "OUTGOING DOCUMENT NOTIFICATION FAILED")
+
+
+	def notify_all_parties_rejected(self):
+		"""
+		Sends email notification to all relevant parties when rejected.
+		"""
+		recipients = [self.created_by_user, self.department_approver, self.leadership_reviewer, self.leader_signer]
+		recipients = list(set([r for r in recipients if r])) # Remove duplicates and None
+
+		if recipients:
+			subject = f"Văn bản đi đã bị từ chối: {self.outgoing_number} - {self.subject}"
+			body = f"""
+<p>Kính gửi Anh/Chị,</p>
+<p>Văn bản đi "{self.outgoing_number} - {self.subject}" đã bị từ chối.</p>
+"""
+			# Include feedback if available
+			if self.department_approval_feedback:
+				body += f"<p><strong>Ý kiến phê duyệt Bộ phận:</strong> {self.department_approval_feedback}</p>"
+			if self.leadership_review_feedback:
+				body += f"<p><strong>Ý kiến xem xét Lãnh đạo:</strong> {self.leadership_review_feedback}</p>"
+
+			body += f"""
+<p>Vui lòng truy cập vào hệ thống ERPNext để xem chi tiết:</p>
+<p><a href="/app/outgoing-document/{self.name}">Xem Văn bản đi trên ERPNext</a></p>
+"""
+			try:
+				frappe.sendmail(
+					recipients=recipients,
+					subject=subject,
+					message=body,
+					now=True
+				)
+				frappe.log_error(f"Notification sent to all parties for rejected document {self.name}", "OUTGOING DOCUMENT NOTIFICATION")
+			except Exception as e:
+				frappe.log_error(f"Failed to send notification to all parties for rejected document {self.name}: {e}", "OUTGOING DOCUMENT NOTIFICATION FAILED")
