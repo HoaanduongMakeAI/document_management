@@ -674,3 +674,89 @@ class OutgoingDocument(Document):
 				frappe.log_error(f"Notification sent to all parties for rejected document {self.name}", "OUTGOING DOCUMENT NOTIFICATION")
 			except Exception as e:
 				frappe.log_error(f"Failed to send notification to all parties for rejected document {self.name}: {e}", "OUTGOING DOCUMENT NOTIFICATION FAILED")
+
+	@frappe.whitelist()
+	def submit_for_department_approval(self):
+		"""
+		Sets the status to Pending Department Approval and notifies the department approver.
+		"""
+		self.approval_status = "Pending Department Approval"
+		self.save()
+		self.notify_department_approver_for_approval()
+
+	@frappe.whitelist()
+	def department_approve(self):
+		"""
+		Sets the status to Department Approved, records approver and date, and notifies leadership.
+		"""
+		self.approval_status = "Department Approved"
+		self.department_approver = frappe.session.user
+		self.department_approval_date = frappe.utils.nowdate()
+		self.save()
+		self.notify_leadership_reviewer_for_review()
+
+	@frappe.whitelist()
+	def department_reject(self):
+		"""
+		Sets the status to Department Rejected, records approver and date, and notifies the drafter.
+		"""
+		self.approval_status = "Department Rejected"
+		self.department_approver = frappe.session.user
+		self.department_approval_date = frappe.utils.nowdate()
+		self.save()
+		self.notify_drafter_for_revision("Department Rejected")
+
+	@frappe.whitelist()
+	def department_request_edit(self):
+		"""
+		Sets the status back to Draft, records approver and date, and notifies the drafter for revision.
+		"""
+		self.approval_status = "Draft"
+		self.department_approver = frappe.session.user
+		self.department_approval_date = frappe.utils.nowdate()
+		self.save()
+		self.notify_drafter_for_revision("Department Review Request Edit")
+
+	@frappe.whitelist()
+	def leadership_approve(self):
+		"""
+		Sets the status to Leadership Approved, records reviewer and date, and notifies the signer.
+		"""
+		self.approval_status = "Leadership Approved"
+		self.leadership_reviewer = frappe.session.user
+		self.leadership_review_date = frappe.utils.nowdate()
+		self.save()
+		self.notify_leader_signer_for_signing()
+
+	@frappe.whitelist()
+	def leadership_reject(self):
+		"""
+		Sets the status to Leadership Rejected, records reviewer and date, and notifies the drafter.
+		"""
+		self.approval_status = "Leadership Rejected"
+		self.leadership_reviewer = frappe.session.user
+		self.leadership_review_date = frappe.utils.nowdate()
+		self.save()
+		self.notify_drafter_for_revision("Leadership Rejected")
+
+	@frappe.whitelist()
+	def leadership_request_edit(self):
+		"""
+		Sets the status back to Draft, records reviewer and date, and notifies the drafter for revision.
+		"""
+		self.approval_status = "Draft"
+		self.leadership_reviewer = frappe.session.user
+		self.leadership_review_date = frappe.utils.nowdate()
+		self.save()
+		self.notify_drafter_for_revision("Leadership Review Request Edit")
+
+	@frappe.whitelist()
+	def sign_document(self):
+		"""
+		Sets the status to Signed, records signer and date, and notifies all parties.
+		"""
+		self.approval_status = "Signed"
+		self.leader_signer = frappe.session.user
+		self.signing_date = frappe.utils.nowdate()
+		self.save()
+		self.notify_all_parties_signed()

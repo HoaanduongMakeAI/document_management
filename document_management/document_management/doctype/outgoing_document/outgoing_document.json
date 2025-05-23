@@ -30,10 +30,14 @@
   "drafting_section",
   "created_by_user",
   "drafting_date",
+  "submit_for_department_approval_btn",
   "department_approval_section",
   "department_approver",
   "department_approval_date",
   "department_approval_feedback",
+  "department_approve_btn",
+  "department_reject_btn",
+  "department_request_edit_btn",
   "leadership_review_signing_section",
   "leadership_reviewer",
   "leadership_review_date",
@@ -41,8 +45,10 @@
   "leader_signer",
   "signing_date",
   "scanned_signature",
-  "signing_approver",
-  "final_approver",
+  "leadership_approve_btn",
+  "leadership_reject_btn",
+  "leadership_request_edit_btn",
+  "sign_document_btn",
   "versions_section",
   "versions"
  ],
@@ -149,7 +155,8 @@
    "fieldtype": "Select",
    "label": "Approval Status",
    "options": "Draft\nPending Department Approval\nDepartment Approved\nDepartment Rejected\nPending Leadership Review\nLeadership Approved\nLeadership Rejected\nPending Signing\nSigned\nIssued\nRejected",
-   "reqd": 1
+   "reqd": 1,
+   "read_only": 1
   },
   {
    "fieldname": "drafting_section",
@@ -167,6 +174,12 @@
    "fieldname": "drafting_date",
    "fieldtype": "Date",
    "label": "Drafting Date"
+  },
+  {
+   "fieldname": "submit_for_department_approval_btn",
+   "fieldtype": "Button",
+   "label": "Submit for Department Approval",
+   "insert_after": "drafting_date"
   },
   {
    "fieldname": "department_approval_section",
@@ -188,6 +201,24 @@
    "fieldname": "department_approval_feedback",
    "fieldtype": "Text",
    "label": "Department Approval Feedback"
+  },
+  {
+   "fieldname": "department_approve_btn",
+   "fieldtype": "Button",
+   "label": "Approve (Department)",
+   "insert_after": "department_approval_feedback"
+  },
+  {
+   "fieldname": "department_reject_btn",
+   "fieldtype": "Button",
+   "label": "Reject (Department)",
+   "insert_after": "department_approve_btn"
+  },
+  {
+   "fieldname": "department_request_edit_btn",
+   "fieldtype": "Button",
+   "label": "Request Edit (Department)",
+   "insert_after": "department_reject_btn"
   },
   {
    "fieldname": "leadership_review_signing_section",
@@ -227,16 +258,28 @@
    "label": "Scanned Signature"
   },
   {
-   "fieldname": "signing_approver",
-   "fieldtype": "Link",
-   "label": "Signing Approver",
-   "options": "User"
+   "fieldname": "leadership_approve_btn",
+   "fieldtype": "Button",
+   "label": "Approve (Leadership)",
+   "insert_after": "scanned_signature"
   },
   {
-   "fieldname": "final_approver",
-   "fieldtype": "Link",
-   "label": "Final Approver",
-   "options": "User"
+   "fieldname": "leadership_reject_btn",
+   "fieldtype": "Button",
+   "label": "Reject (Leadership)",
+   "insert_after": "leadership_approve_btn"
+  },
+  {
+   "fieldname": "leadership_request_edit_btn",
+   "fieldtype": "Button",
+   "label": "Request Edit (Leadership)",
+   "insert_after": "leadership_reject_btn"
+  },
+  {
+   "fieldname": "sign_document_btn",
+   "fieldtype": "Button",
+   "label": "Sign Document",
+   "insert_after": "leadership_request_edit_btn"
   },
   {
    "fieldname": "processing_details_section",
