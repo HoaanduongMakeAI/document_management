@@ -154,7 +154,7 @@
    "fieldname": "approval_status",
    "fieldtype": "Select",
    "label": "Approval Status",
-   "options": "Draft\nPending Department Approval\nDepartment Approved\nDepartment Rejected\nPending Leadership Review\nLeadership Approved\nLeadership Rejected\nPending Signing\nSigned\nIssued\nRejected",
+   "options": "Draft\nPending Department Approval\nPending Leadership Review\nPending Signing\nSigned\nIssued",
    "reqd": 1,
    "read_only": 1
   },

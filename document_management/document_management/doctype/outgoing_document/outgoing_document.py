@@ -414,41 +414,29 @@ class OutgoingDocument(Document):
 				# Transition from Draft to Pending Department Approval
 				self.notify_department_approver_for_approval()
 
-			elif current_status == "Department Approved" and original_status == "Pending Department Approval":
-				# Transition from Pending Department Approval to Department Approved
+			elif current_status == "Pending Leadership Review" and original_status == "Pending Department Approval":
+				# Transition from Pending Department Approval to Pending Leadership Review (Department Approved)
 				self.department_approver = frappe.session.user
 				self.department_approval_date = frappe.utils.nowdate()
 				self.notify_leadership_reviewer_for_review()
 
-			elif current_status == "Department Rejected" and original_status == "Pending Department Approval":
-				# Transition from Pending Department Approval to Department Rejected
+			elif current_status == "Draft" and original_status == "Pending Department Approval":
+				# Transition from Pending Department Approval to Draft (Department Rejected or Request Edit)
 				self.department_approver = frappe.session.user
 				self.department_approval_date = frappe.utils.nowdate()
-				self.notify_drafter_for_revision("Department Rejected")
+				# Notification is handled in the button methods based on specific action
 
-			elif current_status == "Draft" and original_status in ["Department Rejected", "Leadership Rejected", "Leadership Review Request Edit"]:
-				# Transition back to Draft for revision
-				self.notify_drafter_for_revision(original_status)
-
-			elif current_status == "Pending Leadership Review" and original_status == "Department Approved":
-				# Transition from Department Approved to Pending Leadership Review
-				self.notify_leadership_reviewer_for_review()
-
-			elif current_status == "Leadership Approved" and original_status == "Pending Leadership Review":
-				# Transition from Pending Leadership Review to Leadership Approved
+			elif current_status == "Pending Signing" and original_status == "Pending Leadership Review":
+				# Transition from Pending Leadership Review to Pending Signing (Leadership Approved)
 				self.leadership_reviewer = frappe.session.user
 				self.leadership_review_date = frappe.utils.nowdate()
 				self.notify_leader_signer_for_signing()
 
-			elif current_status == "Leadership Rejected" and original_status == "Pending Leadership Review":
-				# Transition from Pending Leadership Review to Leadership Rejected
+			elif current_status == "Draft" and original_status == "Pending Leadership Review":
+				# Transition from Pending Leadership Review to Draft (Leadership Rejected or Request Edit)
 				self.leadership_reviewer = frappe.session.user
 				self.leadership_review_date = frappe.utils.nowdate()
-				self.notify_drafter_for_revision("Leadership Rejected")
-
-			elif current_status == "Pending Signing" and original_status == "Leadership Approved":
-				# Transition from Leadership Approved to Pending Signing
-				self.notify_leader_signer_for_signing()
+				# Notification is handled in the button methods based on specific action
 
 			elif current_status == "Signed" and original_status == "Pending Signing":
 				# Transition from Pending Signing to Signed
@@ -460,9 +448,8 @@ class OutgoingDocument(Document):
 				# Transition from Signed to Issued
 				self.notify_all_parties_issued()
 
-			elif current_status == "Rejected" and original_status not in ["Department Rejected", "Leadership Rejected"]:
-				# Handle rejection from other stages if necessary
-				self.notify_all_parties_rejected()
+			# Note: Rejection notifications are now triggered directly from the button methods
+			# when the status is set back to Draft.
 
 	def notify_department_approver_for_approval(self):
 		"""
@@ -691,13 +678,13 @@ class OutgoingDocument(Document):
 	@frappe.whitelist()
 	def department_approve(self):
 		"""
-		Sets the status to Department Approved, records approver and date, and notifies leadership.
+		Sets the status to Pending Leadership Review, records approver and date, and notifies leadership.
 		Only allowed if status is Pending Department Approval and current user is the department approver.
 		"""
 		if self.approval_status != "Pending Department Approval" or self.department_approver != frappe.session.user:
 			frappe.throw("You are not allowed to approve this document at the department level.")
 
-		self.approval_status = "Department Approved"
+		self.approval_status = "Pending Leadership Review"
 		self.department_approver = frappe.session.user
 		self.department_approval_date = frappe.utils.nowdate()
 		self.save()
@@ -706,13 +693,13 @@ class OutgoingDocument(Document):
 	@frappe.whitelist()
 	def department_reject(self):
 		"""
-		Sets the status to Department Rejected, records approver and date, and notifies the drafter.
+		Sets the status to Draft, records approver and date, and notifies the drafter.
 		Only allowed if status is Pending Department Approval and current user is the department approver.
 		"""
 		if self.approval_status != "Pending Department Approval" or self.department_approver != frappe.session.user:
 			frappe.throw("You are not allowed to reject this document at the department level.")
 
-		self.approval_status = "Department Rejected"
+		self.approval_status = "Draft"
 		self.department_approver = frappe.session.user
 		self.department_approval_date = frappe.utils.nowdate()
 		self.save()
@@ -736,13 +723,13 @@ class OutgoingDocument(Document):
 	@frappe.whitelist()
 	def leadership_approve(self):
 		"""
-		Sets the status to Leadership Approved, records reviewer and date, and notifies the signer.
+		Sets the status to Pending Signing, records reviewer and date, and notifies the signer.
 		Only allowed if status is Pending Leadership Review and current user is the leadership reviewer.
 		"""
 		if self.approval_status != "Pending Leadership Review" or self.leadership_reviewer != frappe.session.user:
 			frappe.throw("You are not allowed to approve this document at the leadership level.")
 
-		self.approval_status = "Leadership Approved"
+		self.approval_status = "Pending Signing"
 		self.leadership_reviewer = frappe.session.user
 		self.leadership_review_date = frappe.utils.nowdate()
 		self.save()
@@ -751,13 +738,13 @@ class OutgoingDocument(Document):
 	@frappe.whitelist()
 	def leadership_reject(self):
 		"""
-		Sets the status to Leadership Rejected, records reviewer and date, and notifies the drafter.
+		Sets the status to Draft, records reviewer and date, and notifies the drafter.
 		Only allowed if status is Pending Leadership Review and current user is the leadership reviewer.
 		"""
 		if self.approval_status != "Pending Leadership Review" or self.leadership_reviewer != frappe.session.user:
 			frappe.throw("You are not allowed to reject this document at the leadership level.")
 
-		self.approval_status = "Leadership Rejected"
+		self.approval_status = "Draft"
 		self.leadership_reviewer = frappe.session.user
 		self.leadership_review_date = frappe.utils.nowdate()
 		self.save()
