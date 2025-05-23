@@ -331,6 +331,20 @@ frappe.ui.form.on('Outgoing Document', {
                 frm.trigger('custom_handle_attach_and_upload');
             }, __('Actions'));
         }
+
+        // Hide all workflow buttons by default
+        frm.toggle_display(['submit_for_department_approval_btn', 'department_approve_btn', 'department_reject_btn', 'department_request_edit_btn', 'leadership_approve_btn', 'leadership_reject_btn', 'leadership_request_edit_btn', 'sign_document_btn'], false);
+
+        // Show buttons based on current status and user
+        if (frm.doc.approval_status === 'Draft' && frm.doc.created_by_user === frappe.session.user) {
+            frm.toggle_display('submit_for_department_approval_btn', true);
+        } else if (frm.doc.approval_status === 'Pending Department Approval' && frm.doc.department_approver === frappe.session.user) {
+            frm.toggle_display(['department_approve_btn', 'department_reject_btn', 'department_request_edit_btn'], true);
+        } else if (frm.doc.approval_status === 'Pending Leadership Review' && frm.doc.leadership_reviewer === frappe.session.user) {
+            frm.toggle_display(['leadership_approve_btn', 'leadership_reject_btn', 'leadership_request_edit_btn'], true);
+        } else if (frm.doc.approval_status === 'Pending Signing' && frm.doc.leader_signer === frappe.session.user) {
+            frm.toggle_display('sign_document_btn', true);
+        }
     },
 
     teams_link: function(frm) {
