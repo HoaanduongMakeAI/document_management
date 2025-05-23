@@ -350,5 +350,102 @@ frappe.ui.form.on('Outgoing Document', {
         } else {
             frappe.msgprint(__('Please save the document before attaching files.'));
         }
+    },
+
+    // Button handlers for workflow transitions
+    submit_for_department_approval_btn: function(frm) {
+        frm.call({
+            method: "submit_for_department_approval",
+            doc: frm.doc,
+            callback: function(r) {
+                if (!r.exc) {
+                    frm.reload_doc();
+                }
+            }
+        });
+    },
+
+    department_approve_btn: function(frm) {
+        frm.call({
+            method: "department_approve",
+            doc: frm.doc,
+            callback: function(r) {
+                if (!r.exc) {
+                    frm.reload_doc();
+                }
+            }
+        });
+    },
+
+    department_reject_btn: function(frm) {
+        frm.call({
+            method: "department_reject",
+            doc: frm.doc,
+            callback: function(r) {
+                if (!r.exc) {
+                    frm.reload_doc();
+                }
+            }
+        });
+    },
+
+    department_request_edit_btn: function(frm) {
+        frm.call({
+            method: "department_request_edit",
+            doc: frm.doc,
+            callback: function(r) {
+                if (!r.exc) {
+                    frm.reload_doc();
+                }
+            }
+        });
+    },
+
+    leadership_approve_btn: function(frm) {
+        frm.call({
+            method: "leadership_approve",
+            doc: frm.doc,
+            callback: function(r) {
+                if (!r.exc) {
+                    frm.reload_doc();
+                }
+            }
+        });
+    },
+
+    leadership_reject_btn: function(frm) {
+        frm.call({
+            method: "leadership_reject",
+            doc: frm.doc,
+            callback: function(r) {
+                if (!r.exc) {
+                    frm.reload_doc();
+                }
+            }
+        });
+    },
+
+    leadership_request_edit_btn: function(frm) {
+        frm.call({
+            method: "leadership_request_edit",
+            doc: frm.doc,
+            callback: function(r) {
+                if (!r.exc) {
+                    frm.reload_doc();
+                }
+            }
+        });
+    },
+
+    sign_document_btn: function(frm) {
+        frm.call({
+            method: "sign_document",
+            doc: frm.doc,
+            callback: function(r) {
+                if (!r.exc) {
+                    frm.reload_doc();
+                }
+            }
+        });
     }
 });
