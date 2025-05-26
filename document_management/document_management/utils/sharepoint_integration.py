@@ -121,10 +121,10 @@ def get_access_token():
         try:
             access_token = token_cache.get_password("access_token")
         except Exception as e:
-            frappe.throw(f"Error getting access_token from token_cache: {e}", "SharePoint Integration")
+            frappe.log_error(f"Error getting access_token from token_cache: {e}", "SharePoint Integration")
             access_token = None # Ensure access_token is None to trigger re-authentication
 
-    else:
+    if not access_token:
         auth_url = connected_app.initiate_web_application_flow(user=frappe.session.user)
         print(auth_url)
         frappe.throw(f"Could not retrieve active token for Connected App '{settings.connected_app}' for user '{frappe.session.user}'. Redirecting to login to obtain a new token. Please click <a href='{auth_url}' target='_blank'>here</a> to log in.", title="Authentication Required")
