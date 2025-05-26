@@ -214,7 +214,7 @@ def get_group_details_and_sharepoint_ids(group_id):
         frappe.throw(f"Error communicating with Microsoft Graph API while fetching details for group {group_id}: {err_msg}")
     except Exception as e:
         frappe.log_error(f"Unexpected error fetching details for group {group_id}: {frappe.get_traceback()}", "SharePoint Integration Error")
-        frappe.throw(f"An unexpected error occurred while fetching SharePoint details for group {group_id}: {str(e)}")
+        raise # Re-raise the exception
 def create_sharepoint_folder_if_not_exists(drive_id, folder_path):
     """
     Checks if a folder exists at the specified path within a drive, creates it if not.
@@ -281,9 +281,8 @@ def create_sharepoint_folder_if_not_exists(drive_id, folder_path):
             frappe.throw(f"Failed to ensure SharePoint folder structure exists: {err_msg}")
             return None
         except Exception as e:
-             # Removed redundant log_error before throw
-             frappe.throw(f"Unexpected error ensuring SharePoint folder structure: {e}")
-             return None
+             frappe.log_error(f"Unexpected error ensuring SharePoint folder structure: {e}", "SharePoint Integration Error")
+             raise # Re-raise the exception
 
     return parent_item_id # Return the ID of the final folder in the path
 
@@ -444,9 +443,8 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
         frappe.throw(f"Failed to upload file to SharePoint: {err_msg}")
         return None
     except Exception as e:
-        # Removed redundant log_error before throw
-        frappe.throw(f"An unexpected error occurred during SharePoint upload: {e}")
-        return None
+        frappe.log_error(f"An unexpected error occurred during SharePoint upload: {e}", "SharePoint Integration Error")
+        raise # Re-raise the exception
 
 @frappe.whitelist()
 def list_sharepoint_folder_contents(folder_docname, relative_path="/"):
@@ -528,9 +526,7 @@ def list_sharepoint_folder_contents(folder_docname, relative_path="/"):
         return {"error": str(e)}
     except Exception as e:
         frappe.log_error(f"Error listing SharePoint contents for {folder_docname} at '{relative_path}': {frappe.get_traceback()}", "SharePoint List Contents Error")
-        print(str(e))
-        print(f'{e}')
-        return {"error": f"Unexpected error: {str(e)}"}
+        raise # Re-raise the exception
 
 
 @frappe.whitelist()
@@ -612,7 +608,7 @@ def get_sharepoint_item_details(target_folder_docname, relative_path_to_item):
         return {"error": str(e)}
     except Exception as e:
         frappe.log_error(f"Error getting SharePoint item details for {target_folder_docname} at '{relative_path_to_item}': {frappe.get_traceback()}", "SharePoint Item Details Error")
-        return {"error": f"Unexpected error: {str(e)}"}
+        raise # Re-raise the exception
 
 
 @frappe.whitelist()
@@ -766,7 +762,7 @@ def upload_file_to_path(doctype, docname, file_doc_name, target_folder_docname, 
         return {"error": str(e)}
     except Exception as e:
         frappe.log_error(f"Error uploading to SharePoint path: {frappe.get_traceback()}", "SharePoint Upload to Path Error")
-        return {"error": f"Unexpected error: {str(e)}"}
+        raise # Re-raise the exception
 
 
 # TODO: Implement upload_large_file function using createUploadSession
@@ -822,7 +818,7 @@ def _get_drive_item_from_web_url(web_url):
         raise frappe.ValidationError(_("API Error resolving share link: {0}").format(err_msg))
     except Exception as e:
         frappe.log_error(f"Unexpected error resolving share link '{web_url}': {frappe.get_traceback()}", "SharePoint Download Helper")
-        raise frappe.ValidationError(_("Unexpected error resolving share link: {0}").format(str(e)))
+        raise # Re-raise the exception
 
 
 @frappe.whitelist()
@@ -877,7 +873,7 @@ def get_sharepoint_version_from_link(teams_link):
         return None
     except Exception as e:
         frappe.log_error(f"Unexpected error fetching SharePoint version for link '{teams_link}': {frappe.get_traceback()}", "SharePoint Get Version")
-        frappe.throw("Unexpected error fetching SharePoint version: {0}".format(str(e)))
+        raise # Re-raise the exception
         return None
 
 
@@ -931,4 +927,4 @@ def download_items(teams_link):
         return {"message": {"error": _("API Error during download: {0}").format(err_msg)}}
     except Exception as e:
         frappe.log_error(f"Unexpected error during download for link '{teams_link}': {frappe.get_traceback()}", "SharePoint Download")
-        return {"message": {"error": _("Unexpected error during download: {0}").format(str(e))}}
+        raise # Re-raise the exception
