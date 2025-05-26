@@ -133,7 +133,9 @@ def get_access_token():
             return None # Stop execution after redirect
         except Exception as e:
             frappe.msgprint(f"Failed to initiate web application flow for Connected App '{settings.connected_app}': {e}", "SharePoint Login Flow Error")
-            frappe.throw(f"Failed to initiate login flow for Connected App '{settings.connected_app}'. {e}")
+            import traceback
+            error_traceback = traceback.format_exc()
+            frappe.throw(f"Failed to initiate login flow for Connected App '{settings.connected_app}'. {e}\nTraceback:\n{error_traceback}")
 
     return access_token
 
