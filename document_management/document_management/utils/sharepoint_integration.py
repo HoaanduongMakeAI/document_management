@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe.exceptions import Redirect
 import requests
 import os
 import urllib.parse
@@ -81,6 +82,8 @@ def upload_file_via_modal(doctype, docname, file_doc_name):
 			frappe.log_error(error_msg, f"SharePoint Upload Issue ({doctype}: {docname})")
 			return {"error": error_msg}
 
+	except Redirect:
+		raise
 	except Exception as e:
 		error_msg = f"SharePoint upload failed for file '{file_doc_name}' on document '{doctype} {docname}': {e}"
 		frappe.log_error(frappe.get_traceback(), f"SharePoint Upload Error ({doctype}: {docname})")
@@ -212,6 +215,8 @@ def get_group_details_and_sharepoint_ids(group_id):
 
         return group_name, site_id, drive_id
 
+    except Redirect:
+        raise
     except requests.exceptions.RequestException as e:
         err_msg = e.response.text if e.response else str(e)
         frappe.log_error(f"Graph API Error fetching details for group {group_id}: {err_msg}", "SharePoint Integration Error")
@@ -277,6 +282,8 @@ def create_sharepoint_folder_if_not_exists(drive_id, folder_path):
                 frappe.msgprint(f"Created SharePoint folder segment '{segment}'.")
                 # frappe.msgprint(f"Created SharePoint folder segment '{segment}' with ID: {parent_item_id}") # Keep log for detailed ID if needed
 
+        except Redirect:
+            raise
         except requests.exceptions.RequestException as e:
             err_msg = e.response.text if e.response else str(e)
             # Removed redundant log_error before throw
@@ -438,6 +445,8 @@ def upload_file_to_sharepoint(doc, file_doc_name, action_details):
         # Do NOT save the document here. The on_update hook will handle saving and versioning.
         return {"sharepoint_link": sharepoint_link, "version_id": version_id}
 
+    except Redirect:
+        raise
     except requests.exceptions.RequestException as e:
         err_msg = e.response.text if e.response else str(e)
         # Removed redundant log_error before throw
@@ -517,6 +526,8 @@ def list_sharepoint_folder_contents(folder_docname, relative_path="/"):
             })
         return {"items": items}
 
+    except Redirect:
+        raise
     except requests.exceptions.RequestException as e:
         err_msg = e.response.text if e.response else str(e)
         frappe.log_error(f"Graph API error listing contents for {folder_docname} at '{relative_path}': {err_msg}", "SharePoint List Contents Error")
@@ -597,6 +608,8 @@ def get_sharepoint_item_details(target_folder_docname, relative_path_to_item):
             "id": item_data.get("id")
         }
 
+    except Redirect:
+        raise
     except requests.exceptions.RequestException as e:
         err_msg = e.response.text if e.response else str(e)
         frappe.log_error(f"Graph API error getting item details for {target_folder_docname} at '{relative_path_to_item}': {err_msg}", "SharePoint Item Details Error")
@@ -749,6 +762,8 @@ def upload_file_to_path(doctype, docname, file_doc_name, target_folder_docname, 
             "version_id": upload_api_response_data.get("id", upload_api_response_data.get("eTag"))
         }
 
+    except Redirect:
+        raise
     except requests.exceptions.RequestException as e:
         err_msg = e.response.text if e.response else str(e)
         frappe.log_error(f"Graph API error uploading to path: {err_msg}", "SharePoint Upload to Path Error")
@@ -805,6 +820,8 @@ def _get_drive_item_from_web_url(web_url):
             "name": item_name,
             "is_file": "file" in item_data # Check if it's a file system object (could be a folder if link points to folder)
         }
+    except Redirect:
+        raise
     except requests.exceptions.RequestException as e:
         err_msg = e.response.text if e.response and e.response.text else str(e)
         frappe.log_error(f"Graph API error resolving share link '{web_url}': {err_msg}", "SharePoint Download Helper")
@@ -854,6 +871,8 @@ def get_sharepoint_version_from_link(teams_link):
 
         return sharepoint_version_number
 
+    except Redirect:
+        raise
     except frappe.ValidationError as e: # Catch errors from _get_drive_item_from_web_url or other validation
         frappe.log_error(f"Validation error fetching version for link '{teams_link}': {str(e)}", "SharePoint Get Version")
         frappe.throw(str(e)) # Re-throw the validation error
@@ -908,6 +927,8 @@ def download_items(teams_link):
         # The JS callback will not receive a typical JSON response in this success case.
         return
 
+    except Redirect:
+        raise
     except frappe.ValidationError as e: # Catch errors from _get_drive_item_from_web_url
         frappe.log_error(f"Validation error during download for link '{teams_link}': {str(e)}", "SharePoint Download")
         return {"message": {"error": str(e)}}
