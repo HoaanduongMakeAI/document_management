@@ -121,7 +121,7 @@ def get_access_token():
     
 
     if not token_cache:
-        frappe.throw(f"Could not retrieve active token for Connected App '{settings.connected_app}' for user '{frappe.session.user}'. Redirecting to login to obtain a new token.")
+        frappe.msgprint(f"Could not retrieve active token for Connected App '{settings.connected_app}' for user '{frappe.session.user}'. Redirecting to login to obtain a new token.")
         # try:
         #     auth_url = connected_app.initiate_web_application_flow(user=frappe.session.user)
         #     print(auth_url)
