@@ -127,10 +127,15 @@ def get_access_token():
 
     if not access_token:
         frappe.msgprint(f"Could not retrieve active token for Connected App '{settings.connected_app}' for user '{frappe.session.user}'. Redirecting to login to obtain a new token.")
-        auth_url = connected_app.initiate_web_application_flow(user=frappe.session.user)
-        print(auth_url)
-        frappe.redirect(auth_url)
-        return None # Stop execution after redirect
+        try:
+            auth_url = connected_app.initiate_web_application_flow(user=frappe.session.user)
+            # Instead of frappe.redirect, return the URL for the frontend to handle
+            return {"redirect_url": auth_url}
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            error_traceback = traceback.format_exc()
+            frappe.throw(f"Failed to initiate login flow for Connected App '{settings.connected_app}'. {e}\nTraceback:\n{error_traceback}")
 
     return access_token
 
