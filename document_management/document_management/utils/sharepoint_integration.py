@@ -113,16 +113,19 @@ def get_access_token():
     	# Assuming the token is needed for the current user initiating the action
     	token_cache = connected_app.get_active_token(user=frappe.session.user)
    
-    	if not token_cache or not token_cache.get_password("access_token"):
+    	access_token = None
+    	if token_cache:
+    		try:
+    			access_token = token_cache.get_password("access_token")
+    		except Exception as e:
+    			frappe.log_error(f"Error retrieving access_token from cache for Connected App '{settings.connected_app}': {e}", "SharePoint Token Error")
+   
+    	if not access_token:
     		frappe.msgprint(f"Could not retrieve active token for Connected App '{settings.connected_app}' for user '{frappe.session.user}'. Redirecting to login to obtain a new token.")
     		auth_url = connected_app.initiate_web_application_flow(user=frappe.session.user)
     		frappe.redirect(auth_url)
     		return None # Stop execution after redirect
    
-    	access_token = token_cache.get_password("access_token")
-   
-    	if not access_token:
-    		frappe.throw(f"Could not retrieve access token from cache for Connected App '{settings.connected_app}'.")
    
     	return access_token
     except Exception as e:
