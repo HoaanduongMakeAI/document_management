@@ -115,7 +115,7 @@ def get_access_token():
     access_token = None
 
     token_cache = connected_app.get_active_token(user=frappe.session.user)
-    access_token = access_token = token_cache.get_password("access_token")
+    access_token = token_cache.get_password("access_token")
 
     if not access_token:
         frappe.msgprint(f"Could not retrieve active token for Connected App '{settings.connected_app}' for user '{frappe.session.user}'. Redirecting to login to obtain a new token.")
