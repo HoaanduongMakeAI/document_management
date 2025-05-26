@@ -114,31 +114,21 @@ def get_access_token():
     if not connected_app.authorization_uri:
         frappe.throw(f"Authorization URI is not set for Connected App '{settings.connected_app}'. Please configure it in Connected App settings.")
 
-    token_cache = None
+    token_cache = connected_app.get_active_token(user=frappe.session.user)
     access_token = None
 
-    token_cache = connected_app.get_active_token(user=frappe.session.user)
-    
+    if token_cache:
+        try:
+            access_token = token_cache.get_password("access_token")
+        except Exception as e:
+            frappe.throw(f"Error getting access_token from token_cache: {e}", "SharePoint Integration")
+            access_token = None # Ensure access_token is None to trigger re-authentication
 
-    if not token_cache:
-        
-        # try:
-        #     auth_url = connected_app.initiate_web_application_flow(user=frappe.session.user)
-        #     print(auth_url)
-        #     frappe.redirect(auth_url)
-        #     # Instead of frappe.redirect, return the URL for the frontend to handle
-        #     return None
-        # except Exception as e:
-        #     import traceback
-        #     traceback.print_exc()
-        #     error_traceback = traceback.format_exc()
-        #     frappe.throw(f"Failed to initiate login flow for Connected App '{settings.connected_app}'. {e}\nTraceback:\n{error_traceback}")
+    else:
         auth_url = connected_app.initiate_web_application_flow(user=frappe.session.user)
         print(auth_url)
         frappe.throw(f"Could not retrieve active token for Connected App '{settings.connected_app}' for user '{frappe.session.user}'. Redirecting to login to obtain a new token. Please click <a href='{auth_url}' target='_blank'>here</a> to log in.", title="Authentication Required")
-        
-
-    access_token = token_cache.get_password("access_token")
+    
     return access_token
 
 def get_headers():
