@@ -298,13 +298,9 @@ frappe.ui.form.on('Outgoing Document', {
                         dialog.get_field('path_display_html').$wrapper.html(html + `<div class="text-danger mt-2">${__('Error')}: ${r.message.error}</div>`);
                         dialog.get_field('back_button').toggle(current_sharepoint_path !== '/' && current_sharepoint_path !== '');
                     } else if (r.exc) {
-                        // Let Frappe's default error handling display the message
-                        // dialog.get_field('path_display_html').$wrapper.html(html + `<div class="text-danger mt-2">${__('Server error while listing contents.')}</div>`);
-                        // console.error("List Contents Error:", r.exc);
-                        // dialog.get_field('back_button').toggle(current_sharepoint_path !== '/' && current_sharepoint_path !== '');
+                        dialog.get_field('path_display_html').$wrapper.html(html + `<div class="text-danger mt-2">${__('Server error while listing contents.')}</div>`);
                         console.error("List Contents Error:", r.exc);
-                        // dialog.hide(); // Hide the dialog to reveal Frappe's default error message
-                        return; // Stop further processing in this callback
+                        dialog.get_field('back_button').toggle(current_sharepoint_path !== '/' && current_sharepoint_path !== '');
                     } else {
                         dialog.get_field('path_display_html').$wrapper.html(html + '<div class="text-muted mt-2">' + __('Folder is empty or unable to load contents.') + '</div>');
                         dialog.get_field('back_button').toggle(current_sharepoint_path !== '/' && current_sharepoint_path !== '');
