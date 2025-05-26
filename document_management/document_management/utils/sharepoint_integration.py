@@ -129,10 +129,10 @@ def get_access_token():
         frappe.msgprint(f"Could not retrieve active token for Connected App '{settings.connected_app}' for user '{frappe.session.user}'. Redirecting to login to obtain a new token.")
         try:
             auth_url = connected_app.initiate_web_application_flow(user=frappe.session.user)
+            print(auth_url)
             frappe.redirect(auth_url)
             return None # Stop execution after redirect
         except Exception as e:
-            frappe.msgprint(f"Failed to initiate web application flow for Connected App '{settings.connected_app}': {e}", "SharePoint Login Flow Error")
             import traceback
             error_traceback = traceback.format_exc()
             frappe.throw(f"Failed to initiate login flow for Connected App '{settings.connected_app}'. {e}\nTraceback:\n{error_traceback}")
