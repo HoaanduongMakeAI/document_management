@@ -114,7 +114,9 @@ def get_access_token():
     	token_cache = connected_app.get_active_token(user=frappe.session.user)
    
     	if not token_cache:
-    		frappe.throw(f"Could not retrieve token cache for Connected App '{settings.connected_app}' and user '{frappe.session.user}'. Please check configuration and authorization.")
+    		frappe.msgprint(f"Could not retrieve token cache for Connected App '{settings.connected_app}' for user '{frappe.session.user}'. Redirecting to login to obtain a new token.")
+    		frappe.redirect(connected_app.get_oauth_url())
+    		return None # Stop execution after redirect
    
     	access_token = token_cache.get_password("access_token")
    
