@@ -119,25 +119,21 @@ def get_access_token():
     except Exception as e:
         frappe.msgprint(f"Error getting active token for Connected App '{settings.connected_app}': {e}", "SharePoint Token Error")
 
-    if token_cache:
-        try:
-            access_token = token_cache.get_password("access_token")
-        except Exception as e:
-            frappe.msgprint(f"Error retrieving access_token from cache for Connected App '{settings.connected_app}': {e}", "SharePoint Token Error")
-
-    if not access_token:
+    if not token_cache:
         frappe.msgprint(f"Could not retrieve active token for Connected App '{settings.connected_app}' for user '{frappe.session.user}'. Redirecting to login to obtain a new token.")
         try:
             auth_url = connected_app.initiate_web_application_flow(user=frappe.session.user)
+            print(auth_url)
+            frappe.redirect(auth_url)
             # Instead of frappe.redirect, return the URL for the frontend to handle
-            return {"redirect_url": auth_url}
+            return None
         except Exception as e:
             import traceback
             traceback.print_exc()
             error_traceback = traceback.format_exc()
             frappe.throw(f"Failed to initiate login flow for Connected App '{settings.connected_app}'. {e}\nTraceback:\n{error_traceback}")
 
-    return access_token
+    return token_cache
 
 def get_headers():
     """Returns the authorization headers for Graph API calls."""
