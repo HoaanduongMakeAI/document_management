@@ -115,8 +115,9 @@ def get_access_token():
     access_token = None
 
     token_cache = connected_app.get_active_token(user=frappe.session.user)
+    access_token = access_token = token_cache.get_password("access_token")
 
-    if not token_cache:
+    if not access_token:
         frappe.msgprint(f"Could not retrieve active token for Connected App '{settings.connected_app}' for user '{frappe.session.user}'. Redirecting to login to obtain a new token.")
         try:
             auth_url = connected_app.initiate_web_application_flow(user=frappe.session.user)
@@ -130,7 +131,8 @@ def get_access_token():
             error_traceback = traceback.format_exc()
             frappe.throw(f"Failed to initiate login flow for Connected App '{settings.connected_app}'. {e}\nTraceback:\n{error_traceback}")
 
-    return token_cache
+    
+    return access_token
 
 def get_headers():
     """Returns the authorization headers for Graph API calls."""
