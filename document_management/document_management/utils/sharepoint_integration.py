@@ -106,31 +106,35 @@ def get_access_token():
     Retrieves the access token using the Connected App specified in settings.
     """
     settings = get_sharepoint_settings()
+    connected_app = frappe.get_doc("Connected App", settings.connected_app)
+    
+    token_cache = None
+    access_token = None
+
     try:
-    	# Get the Connected App document
-    	connected_app = frappe.get_doc("Connected App", settings.connected_app)
-    	# Get the active token cache (handles refresh)
-    	# Assuming the token is needed for the current user initiating the action
-    	token_cache = connected_app.get_active_token(user=frappe.session.user)
-   
-    	access_token = None
-    	if token_cache:
-    		try:
-    			access_token = token_cache.get_password("access_token")
-    		except Exception as e:
-    			frappe.log_error(f"Error retrieving access_token from cache for Connected App '{settings.connected_app}': {e}", "SharePoint Token Error")
-   
-    	if not access_token:
-    		frappe.msgprint(f"Could not retrieve active token for Connected App '{settings.connected_app}' for user '{frappe.session.user}'. Redirecting to login to obtain a new token.")
-    		auth_url = connected_app.initiate_web_application_flow(user=frappe.session.user)
-    		frappe.redirect(auth_url)
-    		return None # Stop execution after redirect
-   
-   
-    	return access_token
+        token_cache = connected_app.get_active_token(user=frappe.session.user)
     except Exception as e:
-    	# Removed redundant log_error before throw
-    	frappe.throw(f"Failed to get access token from Connected App '{settings.connected_app}': {e}")
+        frappe.log_error(f"Error getting active token for Connected App '{settings.connected_app}': {e}", "SharePoint Token Error")
+
+    if token_cache:
+        try:
+            access_token = token_cache.get_password("access_token")
+        except frappe.exceptions.PasswordNotFoundError:
+            frappe.log_error(f"Access token not found in cache for Connected App '{settings.connected_app}'.", "SharePoint Token Error")
+        except Exception as e:
+            frappe.log_error(f"Unexpected error retrieving access_token from cache for Connected App '{settings.connected_app}': {e}", "SharePoint Token Error")
+
+    if not access_token:
+        frappe.msgprint(f"Could not retrieve active token for Connected App '{settings.connected_app}' for user '{frappe.session.user}'. Redirecting to login to obtain a new token.")
+        try:
+            auth_url = connected_app.initiate_web_application_flow(user=frappe.session.user)
+            frappe.redirect(auth_url)
+            return None # Stop execution after redirect
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), f"Failed to initiate web application flow for Connected App '{settings.connected_app}'")
+            frappe.throw(f"Failed to initiate login flow for Connected App '{settings.connected_app}': {e}")
+
+    return access_token
 
 def get_headers():
     """Returns the authorization headers for Graph API calls."""
