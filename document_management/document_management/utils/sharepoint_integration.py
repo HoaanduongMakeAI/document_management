@@ -128,7 +128,7 @@ def get_access_token():
         auth_url = connected_app.initiate_web_application_flow(user=frappe.session.user)
         print(auth_url)
         # frappe.redirect(auth_url)
-        frappe.throw(f"Could not retrieve active token for Connected App '{settings.connected_app}' for user '{frappe.session.user}'. Redirecting to login to obtain a new token. Please <a href='{auth_url}' target='_blank'>click here</a> to log in.", title="Authentication Required")
+        frappe.throw(f"Could not retrieve active token for Connected App '{settings.connected_app}' for user '{frappe.session.user}'. Redirecting to login to obtain a new token. Please click {auth_url} to log in.", title="Authentication Required")
     
     return access_token
 
