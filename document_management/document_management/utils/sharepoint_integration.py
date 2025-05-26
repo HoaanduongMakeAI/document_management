@@ -528,6 +528,8 @@ def list_sharepoint_folder_contents(folder_docname, relative_path="/"):
         return {"error": str(e)}
     except Exception as e:
         frappe.log_error(f"Error listing SharePoint contents for {folder_docname} at '{relative_path}': {frappe.get_traceback()}", "SharePoint List Contents Error")
+        print(str(e))
+        print(f'{e}')
         return {"error": f"Unexpected error: {str(e)}"}
 
 
