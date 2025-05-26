@@ -108,19 +108,22 @@ def get_access_token():
     settings = get_sharepoint_settings()
     connected_app = frappe.get_doc("Connected App", settings.connected_app)
     
+    if not connected_app.authorization_uri:
+        frappe.throw(f"Authorization URI is not set for Connected App '{settings.connected_app}'. Please configure it in Connected App settings.")
+
     token_cache = None
     access_token = None
 
     try:
         token_cache = connected_app.get_active_token(user=frappe.session.user)
     except Exception as e:
-        frappe.log_error(f"Error getting active token for Connected App '{settings.connected_app}': {e}", "SharePoint Token Error")
+        frappe.msgprint(f"Error getting active token for Connected App '{settings.connected_app}': {e}", "SharePoint Token Error")
 
     if token_cache:
         try:
-        	access_token = token_cache.get_password("access_token")
+            access_token = token_cache.get_password("access_token")
         except Exception as e:
-        	frappe.msgprint(f"Error retrieving access_token from cache for Connected App '{settings.connected_app}': {e}", "SharePoint Token Error")
+            frappe.msgprint(f"Error retrieving access_token from cache for Connected App '{settings.connected_app}': {e}", "SharePoint Token Error")
 
     if not access_token:
         frappe.msgprint(f"Could not retrieve active token for Connected App '{settings.connected_app}' for user '{frappe.session.user}'. Redirecting to login to obtain a new token.")
@@ -129,8 +132,8 @@ def get_access_token():
             frappe.redirect(auth_url)
             return None # Stop execution after redirect
         except Exception as e:
-            frappe.msgprint(f"{frappe.get_traceback()}", f"Failed to initiate web application flow for Connected App '{settings.connected_app}'")
-            frappe.throw(f"Failed to initiate login flow for Connected App '{settings.connected_app}': {e}")
+            frappe.msgprint(f"Failed to initiate web application flow for Connected App '{settings.connected_app}': {e}", "SharePoint Login Flow Error")
+            frappe.throw(f"Failed to initiate login flow for Connected App '{settings.connected_app}'. {e}")
 
     return access_token
 
